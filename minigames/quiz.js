@@ -30,7 +30,7 @@ Q.quiz = {
       const loop = now => { if (!alive || !mcv.isConnected) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; tt += dt;
         const r = mcv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (mcv.width !== (r.width * d | 0)) { mcv.width = r.width * d | 0; mcv.height = r.height * d | 0; }
         const c = mcv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, r.width, r.height);
-        A.drawChar(c, 'guimama', r.width / 2, r.height * 1.55, r.height / 230, { t: tt, face: S.face, noShadow: true, blink: (tt % 3) < 0.12 });
+        A.drawChar(c, 'guimama', r.width / 2, r.height * 1.62, r.height / 190, { t: tt, face: S.face, noShadow: true, blink: (tt % 3) < 0.12 });
         if (S.running) { S.timer += dt; const k = Math.max(0, 1 - S.timer / S.limit); ov.querySelector('.qbar i').style.width = (k * 100) + '%'; ov.querySelector('.qbar').classList.toggle('low', k < 0.3); if (S.timer >= S.limit) pick(-1); }
         requestAnimationFrame(loop); };
       requestAnimationFrame(loop);
