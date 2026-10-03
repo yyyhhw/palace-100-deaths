@@ -10,7 +10,7 @@ Q.tea = {
     return new Promise(res => {
       st = st || {}; const EK = st.errKey || 'err', MAX = st.max || 3, HARD = st.hard || 1, WHO = st.who || 'guimama', NM = st.whoName || '桂嬷嬷';
       const ov = document.querySelector('#gameOv'); ov.className = 'show tea'; AU.setMood('quiz');
-      ov.innerHTML = `<canvas class="tcv"></canvas><div class="thud"><b>${st.title || '奉茶 · 练习'}</b><span class="tspill"></span><div class="tprog"><i></i></div></div>
+      ov.innerHTML = `<canvas class="tcv"></canvas><div class="thud"><b>${st.gtitle || '奉茶 · 练习'}</b><span class="tspill"></span><div class="tprog"><i></i></div></div>
         <div class="tzone tl"><span>◀ 按住</span></div><div class="tzone tr"><span>按住 ▶</span></div>
         <div class="tintro"><div class="tbox"><h3>🍵 奉茶</h3><p>${st.intro || '托盘往哪边歪，就<b>按住另一边</b>把它扶正！<br>小心风、滑地板，还有……某只猫。'}</p><p class="terr"></p><button class="btn pri tgo">开始端茶</button></div></div>`;
       const cv = ov.querySelector('.tcv'), ctx = cv.getContext('2d');

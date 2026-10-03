@@ -144,7 +144,7 @@ N.c2_d12_hall = [
   ] },
   { s: 'huanghou', f: 'normal', t: '按规矩，新人要给本宫奉茶。{位份}，你来吧。' },
   { s: 'os', f: 'sweat', t: '又是奉茶！这次是在皇后面前……可不能洒。' },
-  { game: 'tea', errKey: 'tea2', max: 3, hard: 1.15, dur: 15, who: 'huanghou', whoName: '皇后', title: '奉茶 · 坤宁宫',
+  { game: 'tea', errKey: 'tea2', max: 3, hard: 1.15, dur: 15, who: 'huanghou', whoName: '皇后', gtitle: '奉茶 · 坤宁宫',
     intro: '托盘往哪边歪，就<b>按住另一边</b>！<br>这次是坤宁宫，皇后正看着你呢。', warn: '（洒 3 次……皇后的新衣服就保不住了）' },
   { if: G => (G.flag('game_tea') || {}).fail, then: [
     { cast: [['huanghou', 'shock', 'C'], ['me', 'panic', 'R']] },
@@ -413,12 +413,12 @@ N.c2_d18 = [
   { bg: 'yonghe_night', music: 'night', cast: [['me', 'think', 'C']] },
   { s: 'n', t: '夜深了。荷包才绣了个边。' },
   { c: [
-    { t: '熬夜赶工！今晚不睡了！', fx: { 健康: -30 }, then: [G => { G.run.flags.lateNights++; }, { s: 'n', t: '你绣到了鸡叫。眼睛里的血丝，比绣线还红。' }] },
+    { t: '熬夜赶工！今晚不睡了！', fx: { 健康: -40 }, then: [G => { G.run.flags.lateNights++; }, { s: 'n', t: '你绣到了鸡叫。眼睛里的血丝，比绣线还红。' }] },
     { t: '睡觉。明天再说', fx: { 健康: 5 } },
   ] },
   { s: 'n', t: '第二天夜里。' },
   { c: [
-    { t: '继续熬！最后一晚了！', fx: { 健康: -30 }, then: [G => { G.run.flags.lateNights++; }, { face: { me: 'sleepy' } }, { s: 'n', t: '你的手开始抖，针扎了自己三回。' }] },
+    { t: '继续熬！最后一晚了！', fx: { 健康: -40 }, then: [G => { G.run.flags.lateNights++; }, { face: { me: 'sleepy' } }, { s: 'n', t: '你的手开始抖，针扎了自己三回。' }] },
     { t: '睡觉。手稳比时间多重要', fx: { 健康: 5 } },
   ] },
   { bg: 'yonghe', music: 'day', cast: [['me', 'normal', 'C']] },
@@ -449,6 +449,13 @@ N.c2_d20 = [
     { t: '目不斜视，规规矩矩进殿', fx: { 规矩: 3 } },
   ] },
   { s: 'emperor', f: 'normal', t: '听说你会一种“五子连珠”的棋？陪朕下几局。' },
+  { if: G => G.stat('健康') < 30 && G.died('028'), then: [
+    { s: 'os', f: 'sleepy', t: '🔮 上辈子……就是在这张棋盘上睡着的。眼皮又开始打架了……' },
+    { c: [
+      { t: '狠狠掐自己一把，再灌一大口浓茶提神', fx: { 健康: 20 }, then: [{ s: 'n', t: '浓茶苦得你龇牙咧嘴。但眼睛，睁开了。' }] },
+      { t: '硬撑，应该没事', danger: '028' },
+    ] },
+  ] },
   { if: G => G.stat('健康') < 30, go: 'c2_doze' },
   { game: 'gomoku', games: 3 },
   { if: G => (G.flag('game_gomoku') || {}).sweep, go: 'c2_sweep' },
@@ -513,6 +520,13 @@ N.c2_d22 = [
   { day: 22, time: '午', label: '第22天 · 午后', ch: 'ch2' },
   { bg: 'yonghe', music: 'day', cast: [['me', 'sleepy', 'C']] },
   { s: 'n', t: '午后。蝉鸣阵阵，热得人发困。' },
+  { s: 'n', t: '窗台上，糯米蹲成一个橘色的面包，眼巴巴地盯着你手里的绿豆糕。' },
+  { cat: { pos: 'R', from: 'RR', mood: 'happy' } },
+  { c: [
+    { t: '掰一半分给它', then: [add('cat', 30), { s: 'n', t: '糯米吃得呼噜呼噜响，尾巴翘成了问号。' }] },
+    { t: '护住绿豆糕：“这是我的！”', then: [{ s: 'n', t: '糯米“哼”了一声，跳下窗台走了。' }] },
+  ] },
+  { cat: null },
   { s: 'os', f: 'sleepy', t: '睡个午觉……' },
   { c: [
     { t: '开着窗睡，凉快', go: 'c2_nap_open' },
@@ -546,6 +560,11 @@ N.c2_d25 = [
   ] },
 ];
 N.c2_tao_ask = [
+  { if: G => G.cnt('trust_tao') < 20 && (G.died('033') || G.mem('M06')), then: [
+    { s: 'os', f: 'cry', t: '🔮 上辈子，小桃哭着说“对不起”……是我先对不起她。' },
+    { s: 'me', f: 'cry', t: '小桃，之前是我太凶了。对不起。……你有什么难处，告诉我好不好？' },
+    { s: 'xiaotao', f: 'cry', t: '小、小主……呜哇——' }, add('trust_tao', 30),
+  ] },
   { if: G => G.cnt('trust_tao') < 20, then: [{ s: 'xiaotao', f: 'cry', t: '……没、没什么，奴婢没事。' }, { s: 'os', f: 'think', t: '她不肯说。是我平时对她太凶了吗……' }], go: 'c2_tao_check' },
   { s: 'xiaotao', f: 'cry', t: '小主……长春宫的人抓了奴婢的弟弟，说要奴婢……要奴婢在您的饭菜里……' },
   { s: 'xiaotao', f: 'cry', t: '奴婢不敢！奴婢死也不会害小主！可是弟弟他……呜呜……' },
