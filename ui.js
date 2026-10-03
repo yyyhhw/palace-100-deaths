@@ -15,7 +15,7 @@ UI.isOpen = id => $(id).classList.contains('show');
 UI.init = function () {
   const first = () => { AU.unlock(); primeSpeech(); };
   document.addEventListener('pointerdown', first, { capture: true });
-  document.addEventListener('keydown', first, { capture: true });
+  document.addEventListener('keydown', first, { capture: true }); document.addEventListener('touchend', first, { capture: true });
   $('#tapLayer').addEventListener('click', () => UI.advance());
   $('#dlg').addEventListener('click', () => UI.advance());
   document.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !document.activeElement.matches('input')) { if (!$('#choices').children.length) UI.advance(); } });
@@ -307,7 +307,7 @@ UI.menu = async function () {
 };
 UI.settings = function () {
   const s = G.meta.settings;
-  const html = `<div class="set"><label>🎵 音乐 <input type="range" min="0" max="1" step="0.05" id="sMus" value="${s.music}"></label>
+  const html = `<div class="set"><label>🎶 背景音乐 <input type="checkbox" id="sMusOn" ${s.musicOn !== false ? 'checked' : ''}></label><label>🎵 音乐音量 <input type="range" min="0" max="1" step="0.05" id="sMus" value="${s.music}"></label>
   <label>🔔 音效 <input type="range" min="0" max="1" step="0.05" id="sSfx" value="${s.sfx}"></label>
   <label>🗣️ 死法卡朗读吐槽 <input type="checkbox" id="sSp" ${s.speech ? 'checked' : ''}></label>
   <label>🫨 危险选项轻微抖动（简单模式·第六感）<input type="checkbox" id="sSix" ${s.sixth !== false ? 'checked' : ''}></label>
@@ -315,9 +315,9 @@ UI.settings = function () {
   <p><small>难度：简单（死亡后立即重生、无惩罚，图鉴与记忆永久保留）</small></p>
   <button class="btn warn" id="sWipe">🗑️ 清除全部存档</button></div>`;
   UI.modal('⚙️ 设置', html, [{ t: '完成', cls: 'pri' }]);
-  const upd = () => { s.music = +$('#sMus').value; s.sfx = +$('#sSfx').value; s.speech = $('#sSp').checked; s.sixth = $('#sSix').checked; s.speed = +$('#sSpd').value; Object.assign(AU.cfg, s); AU.applyVol(); if (!s.speech) AU.stopSpeak(); G.save(); };
+  const upd = () => { s.musicOn = $('#sMusOn').checked; s.music = +$('#sMus').value; s.sfx = +$('#sSfx').value; s.speech = $('#sSp').checked; s.sixth = $('#sSix').checked; s.speed = +$('#sSpd').value; Object.assign(AU.cfg, s); AU.applyVol(); if (!s.speech) AU.stopSpeak(); G.save(); };
   ['#sMus', '#sSfx', '#sSp', '#sSix', '#sSpd'].forEach(id => $(id).addEventListener('input', upd));
-  ['#sSp', '#sSix', '#sSpd'].forEach(id => $(id).addEventListener('change', upd));
+  ['#sMusOn', '#sSp', '#sSix', '#sSpd'].forEach(id => $(id).addEventListener('change', upd));
   let armed = false; $('#sWipe').onclick = () => { if (!armed) { armed = true; $('#sWipe').textContent = '⚠️ 再点一次确认清除（不可恢复）'; return; } G.wipe(); hide('#modal'); G.stop(); UI.title(); UI.toast('存档已清除', 'info'); };
 };
 

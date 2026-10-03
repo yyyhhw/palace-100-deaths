@@ -235,6 +235,7 @@ N.c1_d3 = [
   ] },
 ];
 N.c1_quizfail = [
+  { music: 'danger' },
   { s: 'guimama', f: 'angry', t: '五道题，错了一大半。来人，退回原籍。' },
   { s: 'os', f: 'panic', t: '退回原籍＝回家＝回到那个背着冤案、随时会被抄的家……' },
   { s: 'n', t: '三天后，{姓}家旧宅门口，抄家的官兵和你同时到达。场面一度十分尴尬。' },
@@ -279,6 +280,7 @@ N.c1_d4 = [
   { go: 'c1_cat' },
 ];
 N.c1_cat = [
+  { music: 'quiz' },
   { c: [
     { t: '追上去摸摸！', need: G => G.cnt('cat') < 2, inc: 'cat', go: 'c1_cat_chase' },
     { t: '继续追！就差一点点了！', need: G => G.cnt('cat') >= 2, inc: 'cat', danger: '009', go: 'c1_cat_chase' },
@@ -293,6 +295,7 @@ N.c1_cat_chase = [
   { go: 'c1_cat' },
 ];
 N.c1_cat_death = [
+  { music: 'danger' },
   { cat: { pos: 1.4, run: true } },
   { s: 'n', t: '你跟着胖橘一路狂奔，穿过花丛，绕过假山，然后——' },
   { sfx: 'thud' }, { shake: 1 },
@@ -311,6 +314,7 @@ N.c1_cat_fish = [
   { go: 'c1_garden_end' },
 ];
 N.c1_garden_end = [
+  { music: 'day' },
   { time: '夜' },
   { bg: 'room_night', music: 'night', cast: [['me', 'normal', 'L'], ['zhao', 'smile', 'R', { prop: 'incense' }]] },
   { s: 'zhao', t: '{名}妹妹~姐姐看你这两天睡不好，特意给你带了安神香。宫外买的，可金贵了。' },
@@ -427,7 +431,7 @@ N.c1_diary = [
 /* ---------------- 第 8 天 ---------------- */
 N.c1_d8 = [
   { day: 8, time: '午', label: '第8天 · 一张小纸条' },
-  { bg: 'courtyard', music: 'day', cast: [['me', 'normal', 'L'], ['zhao', 'smile', 'R', { prop: 'note' }]] },
+  { bg: 'courtyard', music: 'danger', cast: [['me', 'normal', 'L'], ['zhao', 'smile', 'R', { prop: 'note' }]] },
   { s: 'zhao', f: 'smile', t: '{名}妹妹，帮姐姐一个小忙嘛~' },
   { s: 'zhao', t: '这张纸条，麻烦你交给后门送菜的刘太监。就是给家里报个平安~' },
   { s: 'n', t: '纸条叠成了小小的方胜，上面写着：“今夜子时，老地方。”' },
@@ -641,7 +645,7 @@ N.c1_pass = [
   { go: 'c1_end' },
 ];
 N.c1_end = [
-  { bg: 'cining', music: 'night', cast: [['taihou', 'normal', 'C', { pose: 'beads', prop: 'beads' }]], cat: { pos: 'R', mood: 'happy' } },
+  { bg: 'cining', music: 'mystery', cast: [['taihou', 'normal', 'C', { pose: 'beads', prop: 'beads' }]], cat: { pos: 'R', mood: 'happy' } },
   { s: 'n', t: '当晚，慈宁宫。' },
   { s: 'taihou', f: 'smile', t: '♪两只老虎，两只老虎，跑得快，跑得快……♪', emote: '♪' },
   { s: 'taihou', f: 'normal', t: '听说今天选秀，有个叫{宫名}的孩子……' },

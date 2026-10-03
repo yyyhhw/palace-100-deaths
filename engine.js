@@ -18,7 +18,7 @@ P.registerChapter = function (ch) {
 const STAT_KEYS = ['圣眷', '名声', '健康', '警觉', '疑心', '规矩'];
 const STAT_ICON = { 圣眷: '☀️', 名声: '🌸', 健康: '💊', 警觉: '🔍', 疑心: '👁️', 规矩: '📏' };
 G.STAT_KEYS = STAT_KEYS; G.STAT_ICON = STAT_ICON;
-function freshMeta() { return { v: SAVE_VERSION, names: { modern: '', surname: '', given: '' }, deaths: {}, mems: {}, know: {}, lives: 1, totalDeaths: 0, clear: {}, settings: { music: 0.5, sfx: 0.8, speech: true, speed: 2 }, created: Date.now() }; }
+function freshMeta() { return { v: SAVE_VERSION, names: { modern: '', surname: '', given: '' }, deaths: {}, mems: {}, know: {}, lives: 1, totalDeaths: 0, clear: {}, settings: { music: 0.5, musicOn: true, sfx: 0.8, speech: true, speed: 2 }, created: Date.now() }; }
 function freshRun(ch) { return { ch: ch || 'ch0', node: null, ip: 0, day: 0, time: '', stats: { 圣眷: 10, 名声: 30, 健康: 80, 警觉: 10, 疑心: 0, 规矩: 30 }, flags: {}, items: {}, cnt: {}, scene: { bg: 'title', cast: [], cat: null }, cp: null, started: Date.now() }; }
 G.meta = freshMeta(); G.run = null;
 function migrate(d) {
@@ -223,7 +223,7 @@ async function exec(st, my) {
   if (st.chapterEnd) { P.UI.hideDialog(); await P.UI.chapterEnd(st.chapterEnd, st); return null; }
   if (st.title) { await P.UI.chapterCard(st.title, st.sub); return null; }
   if (st.input) { await P.UI.nameInput(st.input, st); return null; }
-  if (st.game) { const res = await P.GAMES[st.game].play(G, st); if (my !== gen) return null; G.run.flags['game_' + st.game] = res; if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null; }
+  if (st.game) { const pm = G.run.mood || AU.mood; const res = await P.GAMES[st.game].play(G, st); if (pm) AU.setMood(pm); if (my !== gen) return null; G.run.flags['game_' + st.game] = res; if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null; }
   if (st.death) return G.death(st.death, st);
   if (st.go) return { go: st.go };
   if (st.hud !== undefined) { document.body.classList.toggle('nohud', !st.hud); return null; }
@@ -277,10 +277,10 @@ G.rebirth = function (fromStart) {
   if (fromStart || !cp) {
     const keep = G.run; G.run = freshRun('ch0');
     const ch0 = P.chapters.ch0; const start = ch0.rebirthStart || ch0.start;
-    restoreScene({ bg: 'carriage', cast: [] }); G.play(start, 0); return;
+    restoreScene({ bg: 'carriage', cast: [] }); AU.setMood('day'); G.play(start, 0); return;
   }
   const base = clone(cp); base.cp = cp; base.cpLabel = G.run.cpLabel; G.run = base;
-  restoreScene(base.scene);
+  restoreScene(base.scene); AU.setMood(base.mood || 'day');
   G.play(base.node, base.ip);
 };
 G.resume = function () { if (!G.run || !G.run.node) return false; restoreScene(G.run.scene); P.UI.hud(); AU.setMood(G.run.mood || 'day'); G.play(G.run.node, G.run.ip); return true; };
