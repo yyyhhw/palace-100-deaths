@@ -83,10 +83,11 @@ function layout() {
   LAYOUT = { land, sw: land ? W * 0.58 : W, base: land ? H * 1.0 : H * 0.79, maxH: land ? H * 0.86 : H * 0.6 };
 }
 G.layout = () => LAYOUT;
+const BASE = () => (stage.titleMode && !LAYOUT.land ? H * 0.7 : LAYOUT.base);
 function castScale(n) { const L = LAYOUT, per = L.sw / Math.max(2, n); return Math.min(L.maxH, per / 0.5) / 330; }
 G.charScreen = function (id) { // 角色在屏幕上的头顶位置（给对话气泡的尾巴用）
   const c = stage.cast.find(k => k.id === id); if (!c) return null;
-  const s = castScale(stage.cast.length); return { x: c.x * LAYOUT.sw, y: LAYOUT.base - 300 * s };
+  const s = castScale(stage.cast.length); return { x: c.x * LAYOUT.sw, y: BASE() - 300 * s };
 };
 function frame(ts) {
   const now = ts / 1000, dt = Math.min(0.05, now - (frame.last || now)); frame.last = now; stage.t += dt;
@@ -107,14 +108,14 @@ function frame(ts) {
     const blink = t - c.blinkT < 0.13;
     const speaking = stage.speaker === c.id, jump = c.jump ? Math.max(0, c.jump) : 0;
     if (c.jump) c.jump -= dt * 3;
-    let y = LAYOUT.base - Math.sin(Math.max(0, jump) * Math.PI) * 30;
+    let y = BASE() - Math.sin(Math.max(0, jump) * Math.PI) * 30;
     let sc = s * (speaking ? 1.03 : 1) * (c.big || 1);
     const ghost = c.ghost;
     if (ghost) y -= Math.min(1, (t - (c.ghostT || t))) * 40;
     A.drawChar(cx, c.id, c.x * LAYOUT.sw, y, sc, { t: t + i * 0.7, phase: i, face: c.face, talk: speaking && stage.talking && Math.sin(t * 22) > 0, blink: blink && c.face !== 'dead', ghost, stone: c.stone, pose: c.pose, prop: c.prop, flip: c.flip, alpha: c.a * (speaking || !stage.speaker || stage.speaker === 'n' || stage.speaker === 'os' ? 1 : 0.92), tilt: c.tilt, squash: c.squash });
   });
   stage.cast = stage.cast.filter(c => !(c.leaving && c.a <= 0));
-  if (stage.cat) { const k = stage.cat; k.x += ((POS[k.pos] || k.pos) - k.x) * Math.min(1, dt * (k.run ? 3 : 6)); A.drawCat(cx, k.x * LAYOUT.sw, LAYOUT.base - 4, s * 1.1, { t, mood: k.mood, run: k.run, flip: k.flip }); }
+  if (stage.cat) { const k = stage.cat; k.x += ((POS[k.pos] || k.pos) - k.x) * Math.min(1, dt * (k.run ? 3 : 6)); A.drawCat(cx, k.x * LAYOUT.sw, BASE() - 4, s * 1.1, { t, mood: k.mood, run: k.run, flip: k.flip }); }
   // 情绪气泡
   stage.emotes = stage.emotes.filter(e => { e.k += dt / 1.6; if (e.k >= 1) return false; const p = G.charScreen(e.id); if (!p) return false; A.drawEmote(cx, p.x + 42 * s * 3, p.y + 10, Math.max(0.6, s * 3.2), e.e, e.k); return true; });
   // 粒子
@@ -154,7 +155,7 @@ G.busy = false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 G.sleep = sleep;
 G.play = async function (node, ip) {
-  const my = ++gen; G.run.node = node; G.run.ip = ip || 0; G.save();
+  const my = ++gen; stage.titleMode = false; P.UI.hud(); G.run.node = node; G.run.ip = ip || 0; G.save();
   try {
     while (my === gen) {
       const steps = P.NODES[G.run.node];
@@ -176,12 +177,13 @@ async function exec(st, my) {
   if (typeof st === 'function') { const r = st(G); return r && r.then ? await r : r; }
   if (st.if !== undefined) {
     const ok = typeof st.if === 'function' ? st.if(G) : !!st.if;
-    if (ok) { if (st.then) return execList(st.then, my); if (st.go) return { go: st.go }; if (st.death) return G.death(st.death); }
+    if (ok) { if (st.then) { const r = await execList(st.then, my); if (r) return r; if (st.go) return { go: st.go }; if (st.death) return G.death(st.death); return null; } if (st.go) return { go: st.go }; if (st.death) return G.death(st.death); }
     else { if (st.else && Array.isArray(st.else)) return execList(st.else, my); if (st.else) return { go: st.else }; }
     return null;
   }
-  if (st.bg) { await P.UI.transition(st.trans || 'fade', () => { stage.prevBg = null; stage.bg = st.bg; if (st.cast) setCast(st.cast); else if (!st.keepCast) stage.cast = []; stage.cat = st.cat || null; if (stage.cat) stage.cat.x = POS[stage.cat.pos] || 0.5; restoreXs(); }); if (st.music) AU.setMood(st.music); return null; }
-  if (st.music) { AU.setMood(st.music); }
+  if (st.bg) { if (st.music) G.run.mood = st.music;
+    await P.UI.transition(st.trans || 'fade', () => { stage.prevBg = null; stage.bg = st.bg; if (st.cast) setCast(st.cast); else if (!st.keepCast) stage.cast = []; stage.cat = st.cat || null; if (stage.cat) stage.cat.x = POS[stage.cat.pos] || 0.5; restoreXs(); }); if (st.music) AU.setMood(st.music); return null; }
+  if (st.music) { AU.setMood(st.music); G.run.mood = st.music; if (Object.keys(st).length === 1) return null; }
   if (st.cast) { setCast(st.cast); return null; }
   if (st.enter) { const list = sceneSnapshot().cast; list.push([st.enter, st.face, st.pos || 'R', st]); setCast(list); if (st.sfx) AU.sfx(st.sfx); await sleep(250); return null; }
   if (st.exit) { stage.cast.forEach(c => { if (c.id === st.exit) c.leaving = true; }); await sleep(200); return null; }
@@ -218,12 +220,12 @@ async function exec(st, my) {
   }
   if (st.time) { G.run.time = st.time; P.UI.hud(); P.UI.toast('🕯️ ' + st.time, 'info', 1200); return null; }
   if (st.checkpoint) { G.checkpoint(st.checkpoint); return null; }
+  if (st.chapterEnd) { P.UI.hideDialog(); await P.UI.chapterEnd(st.chapterEnd, st); return null; }
   if (st.title) { await P.UI.chapterCard(st.title, st.sub); return null; }
   if (st.input) { await P.UI.nameInput(st.input, st); return null; }
   if (st.game) { const res = await P.GAMES[st.game].play(G, st); if (my !== gen) return null; G.run.flags['game_' + st.game] = res; if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null; }
   if (st.death) return G.death(st.death, st);
   if (st.go) return { go: st.go };
-  if (st.chapterEnd) { await P.UI.chapterEnd(st.chapterEnd, st); return null; }
   if (st.hud !== undefined) { document.body.classList.toggle('nohud', !st.hud); return null; }
   console.warn('unknown step', st); return null;
 }

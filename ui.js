@@ -326,7 +326,7 @@ UI.title = function () {
   G.stop(); document.body.classList.add('nohud');
   ['#deathOv', '#stationOv', '#galleryOv', '#endOv', '#nameOv'].forEach(hide);
   G.stage.bg = 'title'; G.stage.prevBg = null; G.stage.cat = { pos: 0.86, x: 0.86, mood: 'happy' };
-  G.stage.cast = [];
+  G.stage.cast = []; G.stage.titleMode = true;
   const land = G.layout().land;
   P.G.setTitleCast && P.G.setTitleCast();
   AU.setMood('title');

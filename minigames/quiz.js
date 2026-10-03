@@ -27,7 +27,7 @@ Q.quiz = {
       ov.innerHTML = `<div class="qwrap"><div class="qhead"><canvas class="qmama"></canvas><div class="qht"><b>宫规小测</b><span class="qprog"></span><div class="qbar"><i></i></div><span class="qscore"></span></div></div>
         <div class="qcard"><div class="qq"></div><div class="qopts"></div><div class="qfb"></div></div><div class="qtip">答对 3 题及格 · 每题 ${S.limit} 秒</div></div>`;
       const mcv = ov.querySelector('.qmama'); let alive = true, last = performance.now(), tt = 0;
-      const loop = now => { if (!alive) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; tt += dt;
+      const loop = now => { if (!alive || !mcv.isConnected) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; tt += dt;
         const r = mcv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (mcv.width !== (r.width * d | 0)) { mcv.width = r.width * d | 0; mcv.height = r.height * d | 0; }
         const c = mcv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, r.width, r.height);
         A.drawChar(c, 'guimama', r.width / 2, r.height * 1.55, r.height / 230, { t: tt, face: S.face, noShadow: true, blink: (tt % 3) < 0.12 });

@@ -32,7 +32,7 @@ body.land #stats{width:auto;order:2;flex:0 1 auto} body.land .st{flex:0 0 auto;p
 body.land #btnSkip{margin-left:auto;order:3} body.land #btnMenu{order:4} body.land #lifePill{order:1}
 
 /* ---------- 对话气泡 ---------- */
-#dlg{position:absolute;z-index:9;display:none;left:calc(10px + var(--sal));right:calc(10px + var(--sar));bottom:calc(12px + var(--sab));min-height:min(23vh,170px);padding:22px 20px 26px;background:#fff;border:3.5px solid var(--ink);border-radius:26px;box-shadow:5px 6px 0 rgba(58,32,40,.28);font-size:17px;line-height:1.65;cursor:pointer}
+#dlg{position:absolute;z-index:9;display:none;left:calc(10px + var(--sal));right:calc(10px + var(--sar));bottom:calc(12px + var(--sab));min-height:118px;padding:22px 20px 24px;background:#fff;border:3.5px solid var(--ink);border-radius:26px;box-shadow:5px 6px 0 rgba(58,32,40,.28);font-size:17px;line-height:1.65;cursor:pointer}
 #dlg.show{display:block;animation:pop .22s cubic-bezier(.3,1.6,.6,1)}
 #dlg.choosing{display:none}
 #dlg .txt{min-height:3.2em;white-space:normal;word-break:break-word}
@@ -102,7 +102,7 @@ body.land #toasts{top:calc(54px + var(--sat))}
 .set input[type=range]{width:45%} .set input[type=checkbox]{width:24px;height:24px} .set select{font-size:15px;padding:4px}
 
 /* ---------- 标题 ---------- */
-#titleOv{z-index:15;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(18px + var(--sat)) 16px calc(16px + var(--sab));pointer-events:none}
+#titleOv{z-index:15;flex-direction:column;align-items:center;justify-content:flex-start;padding:calc(18px + var(--sat)) 16px calc(16px + var(--sab));pointer-events:none}
 #titleOv>*{pointer-events:auto}
 .logo{text-align:center;font-family:var(--serif);font-weight:900;color:#fff6dc;filter:drop-shadow(0 4px 0 rgba(90,20,20,.5));animation:floaty 4s ease-in-out infinite}
 .logo .l1{font-size:min(7vw,30px);letter-spacing:4px;-webkit-text-stroke:1px #7a2a2a;color:#fff3d6;text-shadow:0 3px 0 #b0403a}
@@ -110,10 +110,12 @@ body.land #toasts{top:calc(54px + var(--sat))}
 .logo .l2 q{quotes:"“" "”";color:#ffe08a}
 .logo .n100{display:inline-block;background:var(--red);color:#fff6dc;border:4px double #fff3d6;border-radius:12px;padding:0 8px;margin-right:4px;transform:rotate(-6deg);text-shadow:none;font-family:var(--font)}
 .logo .l3{margin-top:6px;font-size:14px;letter-spacing:2px;background:rgba(58,32,40,.7);display:inline-block;padding:2px 12px;border-radius:999px;text-shadow:none}
-.tbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(440px,100%)}
+.tbtns{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(440px,100%)}
 .tbtns .tnew{grid-column:1/-1;font-size:19px;min-height:54px}
 .tinfo{color:#fff6dc;font-size:13px;text-shadow:0 1px 2px #000;margin-top:6px}
-body.land #titleOv{align-items:flex-end;justify-content:center;gap:16px;padding-right:calc(30px + var(--sar))}
+body.land #titleOv{align-items:flex-end;justify-content:center;}
+body.land .tbtns{margin-top:0}
+body.land #titleOv{gap:16px;padding-right:calc(30px + var(--sar))}
 body.land .logo,body.land .tbtns{width:min(420px,46%)} body.land .tinfo{width:min(420px,46%);text-align:center}
 
 /* ---------- 命名 ---------- */
@@ -169,7 +171,7 @@ body.land .logo,body.land .tbtns{width:min(420px,46%)} body.land .tinfo{width:mi
 .mpstat{font-size:13px;text-align:center;margin:6px 0;color:#c8bfff}.mpstat b{color:#ffe08a}
 .stbtns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .stbtns .rb{grid-column:1/-1;font-size:18px;line-height:1.2}.stbtns .rb small{display:block;font-size:12px;font-weight:400}
-.stbtns .btn{font-size:14px;padding:6px}
+.stbtns .btn{font-size:14px;padding:6px;color:var(--ink)}.stbtns .btn.pri{color:#fff8e6}
 .stbtns .rn.hl{animation:wobble 1.2s infinite;background:#ffe08a}
 body.land #stationOv{flex-direction:row}
 body.land #stationOv canvas{width:55%;flex:none;height:100%}
@@ -186,7 +188,7 @@ body.land .stpanel{width:45%;max-height:none;border-top:0;border-left:4px solid 
 .ggrid{flex:1;overflow-y:auto;display:grid;gap:6px;align-content:start;padding:2px}
 .ggrid.death{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
 .ggrid.memory{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-.gcell{aspect-ratio:1/1.12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:2px solid #b8a080;border-radius:10px;background:#e8ddc8;color:#9a8a70;padding:3px;font-size:11px;min-height:44px;overflow:hidden}
+.gcell{height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:2px solid #b8a080;border-radius:10px;background:#e8ddc8;color:#9a8a70;padding:3px;font-size:11px;min-height:44px;overflow:hidden}
 .gcell i{font-style:normal;font-size:10px;font-weight:700}.gcell b{font-size:20px}.gcell span{font-size:11px;line-height:1.15;text-align:center;max-height:2.4em;overflow:hidden}
 .gcell.avail{background:#fff4dc;border-color:#d0a050;color:#8a5a2a}
 .gcell.got{background:linear-gradient(#fff3c4,#f7d670);border-color:#8a5a10;color:#5a1a14;font-weight:700}

@@ -526,13 +526,15 @@ N.c1_n9_found = [
 ];
 
 /* ---------------- 第 10 天 · 太和殿 ---------------- */
+const D10 = [G => { G.run.day = 10; G.run.time = '晨'; P.UI.hud(); return P.UI.dayCard(10, '晨'); }];
 N.c1_d10 = [
-  { day: 10, time: '晨', label: '第10天 · 太和殿选秀' },
+  // 这两种死法的“因”在第 9 天，所以放在第 10 天存档点之前：重生会回到第 9 天
   { if: G => G.flag('framed'), go: 'c1_framed' },
+  { if: G => G.flag('burp'), go: 'c1_burp' },
+  { day: 10, time: '晨', label: '第10天 · 太和殿选秀' },
   { bg: 'hall', music: 'hall', cast: [['gao', 'normal', 'L', { pose: 'whisk', prop: 'whisk' }], ['emperor', 'normal', 'C'], ['me', 'normal', 'R', { pose: 'fold' }]] },
   { s: 'gao', t: '秀女{宫名}，上前——' },
   { s: 'os', f: 'sweat', t: '稳住，问题不大……' },
-  { if: G => G.flag('burp'), go: 'c1_burp' },
   { c: [
     { t: '抬头看看皇帝长啥样', then: [
       { face: { me: 'star' } },
@@ -544,6 +546,7 @@ N.c1_d10 = [
   ], q: '你跪在大殿中央。龙椅上的人看不清脸……' },
 ];
 N.c1_framed = [
+  ...D10,
   { bg: 'courtyard', music: 'danger', cast: [['guimama', 'angry', 'L', { pose: 'ruler', prop: 'ruler' }], ['zhao', 'smirk', 'C'], ['me', 'shock', 'R']] },
   { s: 'zhao', t: '嬷嬷！我亲眼看见{名}妹妹藏了一张纸条！' },
   { s: 'guimama', t: '搜！' },
@@ -553,6 +556,9 @@ N.c1_framed = [
   { death: '014' },
 ];
 N.c1_burp = [
+  ...D10,
+  { bg: 'hall', music: 'hall', cast: [['gao', 'normal', 'L', { pose: 'whisk', prop: 'whisk' }], ['emperor', 'normal', 'C'], ['me', 'normal', 'R', { pose: 'fold' }]] },
+  { s: 'gao', t: '秀女{宫名}，上前——' },
   { s: 'me', f: 'normal', t: '民女{宫名}，参见——' },
   { s: 'me', f: 'shock', t: '嗝——！', sfx: 'burp', shake: 0.6 },
   { s: 'n', t: '嗝声在太和殿里回荡了整整三秒。余音绕梁。' },
@@ -603,7 +609,7 @@ N.c1_sweet = [
   { go: 'c1_pass' },
 ];
 N.c1_result = [
-  { if: G => G.stat('名声') + G.stat('规矩') >= 95, then: [{ set: { rank: '答应', rankName: '封答应' } }], go: 'c1_pass' },
+  { if: G => G.stat('名声') + G.stat('规矩') >= 100, then: [{ set: { rank: '答应', rankName: '封答应' } }], go: 'c1_pass' },
   { if: G => G.flag('metAn'), go: 'c1_maid' },
   { go: 'c1_reject' },
 ];

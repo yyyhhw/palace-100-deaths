@@ -13,12 +13,13 @@ Q.tea = {
         <div class="tzone tl"><span>◀ 按住</span></div><div class="tzone tr"><span>按住 ▶</span></div>
         <div class="tintro"><div class="tbox"><h3>🍵 奉茶</h3><p>托盘往哪边歪，就<b>按住另一边</b>把它扶正！<br>小心风、滑地板，还有……某只猫。</p><p class="terr"></p><button class="btn pri tgo">开始端茶</button></div></div>`;
       const cv = ov.querySelector('.tcv'), ctx = cv.getContext('2d');
+      let alive = true, last = 0;
       const err0 = G.cnt('err');
       const S = this.state = { th: 0, w: 0, u: 0, prog: 0, spills: 0, err: err0, run: false, done: false, t: 0, gust: 0, gustT: 2.2, ev: '', evT: 0, cat: -1, slosh: 0, splash: 0, dur: 17, keys: { l: false, r: false }, ptr: {} };
       ov.querySelector('.terr').textContent = err0 ? `（今天已经错了 ${err0} 次，再错 ${3 - err0} 次就要罚跪！）` : '（洒 3 次就要去雨里罚跪哦）';
       const upd = () => { ov.querySelector('.tspill').textContent = `洒出 ${S.spills} · 今日错误 ${S.err}/3`; ov.querySelector('.tprog i').style.width = (S.prog * 100) + '%'; };
       upd();
-      const recomputeU = () => { const vals = Object.values(S.ptr); const l = S.keys.l || vals.includes(-1), r = S.keys.r || vals.includes(1); S.u = l && !r ? -1 : r && !l ? 1 : 0; ov.querySelector('.tl').classList.toggle('on', S.u < 0); ov.querySelector('.tr').classList.toggle('on', S.u > 0); };
+      const recomputeU = () => { if (!alive) return; const vals = Object.values(S.ptr); const l = S.keys.l || vals.includes(-1), r = S.keys.r || vals.includes(1); S.u = l && !r ? -1 : r && !l ? 1 : 0; ov.querySelector('.tl').classList.toggle('on', S.u < 0); ov.querySelector('.tr').classList.toggle('on', S.u > 0); };
       const down = e => { if (!S.run) return; const r = ov.getBoundingClientRect(); S.ptr[e.pointerId] = (e.clientX - r.left) < r.width / 2 ? -1 : 1; recomputeU(); e.preventDefault(); };
       const up = e => { delete S.ptr[e.pointerId]; recomputeU(); };
       ov.addEventListener('pointerdown', down); ov.addEventListener('pointerup', up); ov.addEventListener('pointercancel', up); ov.addEventListener('pointerleave', up);
@@ -26,13 +27,13 @@ Q.tea = {
       const ku = e => { if (e.key === 'ArrowLeft' || e.key === 'a') S.keys.l = false; if (e.key === 'ArrowRight' || e.key === 'd') S.keys.r = false; recomputeU(); };
       window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
       ov.querySelector('.tgo').onclick = e => { e.stopPropagation(); ov.querySelector('.tintro').remove(); S.run = true; AU.sfx('select'); };
-      let alive = true, last = performance.now();
+      last = performance.now();
       const end = (fail) => {
         S.run = false; S.done = true; G.run.cnt.err = S.err;
         const box = document.createElement('div'); box.className = 'tintro';
         box.innerHTML = `<div class="tbox"><h3>${fail ? '😱 茶全洒了！' : '✨ 奉茶完成！'}</h3><p>${fail ? '桂嬷嬷的脸，比茶还烫。' : S.spills ? `洒了 ${S.spills} 次，桂嬷嬷勉强点了点头。` : '一滴都没洒！桂嬷嬷挑了挑眉。'}</p><button class="btn pri tok">继续</button></div>`;
         ov.appendChild(box); AU.sfx(fail ? 'gong' : 'ding');
-        box.querySelector('.tok').onclick = ev => { ev.stopPropagation(); alive = false; window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); ov.className = ''; ov.innerHTML = ''; this.state = null; res({ spills: S.spills, fail, err: S.err }); };
+        box.querySelector('.tok').onclick = ev => { ev.stopPropagation(); alive = false; window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); ov.removeEventListener('pointerdown', down); ov.removeEventListener('pointerup', up); ov.removeEventListener('pointercancel', up); ov.removeEventListener('pointerleave', up); ov.className = ''; ov.innerHTML = ''; this.state = null; res({ spills: S.spills, fail, err: S.err }); };
       };
       const loop = now => {
         if (!alive) return;
@@ -72,7 +73,7 @@ function draw(c, d, W, H, S, t) {
   // 终点的桂嬷嬷
   if (S.prog > 0.7) { const k = (S.prog - 0.7) / 0.3; A.drawChar(c, 'guimama', W * (1.15 - k * 0.35), H * 0.92, H / 520, { t, face: S.splash > 0 ? 'angry' : 'normal' }); }
   // 主角（端托盘）
-  const s = H / 470, mx = W * 0.4, my = H * 0.92;
+  const s = Math.min(H / 560, W / 400), mx = W * (W > H ? 0.4 : 0.45), my = H * 0.92;
   A.drawChar(c, 'me', mx, my, s, { t: t * 1.6, face: S.splash > 0 ? 'shock' : Math.abs(S.th) > 0.35 ? 'panic' : 'normal', pose: 'tray', tilt: -S.th * 0.15 });
   // 托盘 + 茶杯
   c.save(); c.translate(mx, my - 112 * s); c.rotate(S.th); c.scale(s, s);
