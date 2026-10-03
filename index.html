@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#7a2a2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>穿越回后宫的100种“死法”</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23c0392b'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%23fff'%3E卒%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="nohud port">
+<div id="app">
+  <canvas id="stage"></canvas>
+  <div id="tapLayer"></div>
+  <div id="hud">
+    <div id="dayPill" class="pill"><b>序章</b></div>
+    <div id="lifePill" class="pill">第1世</div>
+    <button id="btnSkip" class="hbtn" aria-label="快进">⏩</button>
+    <button id="btnMenu" class="hbtn" aria-label="菜单">☰</button>
+    <div id="stats" title="点我看属性说明"></div>
+  </div>
+  <div id="dlg"><div class="nameTag"></div><div class="txt"></div><div class="next">▼</div></div>
+  <div id="choices"></div>
+  <div id="toasts"></div>
+
+  <div id="dayCard" class="ov"><div class="dc"><div class="big"></div><div class="sub"></div></div></div>
+  <div id="chapterCard" class="ov"><div class="cc"><div class="ct"></div><div class="cs"></div></div></div>
+
+  <div id="titleOv" class="ov">
+    <div class="logo"><div class="l1">穿越回后宫的</div><div class="l2"><span class="n100">100</span>种<q>死法</q></div><div class="l3">序章 + 第一章 · 入宫</div></div>
+    <div class="tbtns"><button class="btn pri tnew">🏮 开始新的一世</button><button class="btn tcont">📜 继续这一世</button><button class="btn tgal">📖 百死图鉴</button><button class="btn tset">⚙️ 设置</button></div>
+    <div class="tinfo"></div>
+  </div>
+
+  <div id="nameOv" class="ov"><div class="ncard">
+    <div class="ntitle"></div><div class="nsub"></div><div class="nfields"></div><div class="nmsg"></div>
+    <div class="nbtns"><button class="btn dice">🎲 随机</button><button class="btn pri seal"><span>落印</span></button></div>
+    <div class="nhint">可以用英文字母……但后果自负 😏</div>
+  </div></div>
+
+  <div id="deathOv" class="ov"><div class="scroll">
+    <div class="rod top"></div>
+    <div class="paper">
+      <div class="dno"></div><div class="dtitle"></div>
+      <div class="dart"><canvas></canvas><div class="dnew">✨ 新收录</div></div>
+      <div class="dcat"></div><div class="ddesc"></div><div class="droast"></div><div class="dmem"></div>
+      <div class="dbtns"><button class="btn dspeak">🗣️ 再吐槽一次</button><button class="btn dmute"></button><button class="btn pri dgo">去奈何桥 ➜</button></div>
+      <div class="dstamp">卒</div>
+    </div>
+    <div class="rod bot"></div>
+  </div></div>
+
+  <div id="stationOv" class="ov">
+    <div class="sthead">🌉 奈何桥 · 轮回中转站</div>
+    <canvas></canvas>
+    <div class="stpanel"><div class="mpsay"></div><div class="mpstat"></div>
+      <div class="stbtns"><button class="btn pri rb"></button><button class="btn rs">🐴 回到马车上</button><button class="btn rg">📖 图鉴</button><button class="btn rn">✍️ 改名</button></div>
+    </div>
+  </div>
+
+  <div id="galleryOv" class="ov"><div class="gwrap">
+    <div class="ghead"><b>📖 百死图鉴</b><button class="btn gclose">✕</button></div>
+    <div class="gcount"></div>
+    <div class="tabs"><button class="tab on" data-tab="death">💀 死法</button><button class="tab" data-tab="memory">🔮 记忆碎片</button></div>
+    <div class="ggrid"></div>
+  </div></div>
+
+  <div id="endOv" class="ov"><div class="ecard"><div class="etitle"></div><div class="ebody"></div>
+    <div class="ebtns"><button class="btn eg">📖 图鉴</button><button class="btn er">🔁 再来一世（收集死法）</button><button class="btn pri et">🏯 回到标题</button></div></div></div>
+
+  <div id="gameOv"></div>
+  <div id="modal" class="ov"><div class="mcard"><div class="mtitle"></div><div class="mbody"></div><div class="mbtns"></div></div></div>
+  <div id="fader"></div>
+</div>
+<script src="data/deaths.js"></script>
+<script src="data/memories.js"></script>
+<script src="art.js"></script>
+<script src="art_bg.js"></script>
+<script src="audio.js"></script>
+<script src="engine.js"></script>
+<script src="ui.js"></script>
+<script src="minigames/quiz.js"></script>
+<script src="minigames/tea.js"></script>
+<script src="chapters/ch0.js"></script>
+<script src="chapters/ch1.js"></script>
+<script>
+PALACE.G.setTitleCast = function () {
+  const st = PALACE.G.stage;
+  st.cast = [{ id: 'me', face: 'smile', pos: 0.36, x: 0.36, a: 1, pose: 'fan', prop: 'fan' }, { id: 'mengpo', face: 'smirk', pos: 0.7, x: 0.7, a: 1, prop: 'soup' }];
+  st.cat = { pos: 0.88, x: 0.88, mood: 'happy' };
+};
+PALACE.G.boot();
+</script>
+</body>
+</html>
