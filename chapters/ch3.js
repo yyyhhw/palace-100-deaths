@@ -544,7 +544,7 @@ N.c3_escape = [
   { bg: 'garden_night', music: 'danger', cast: [['me', 'sweat', 'C']] },
   { s: 'n', t: '子时。御花园西边。远处有灯笼在晃——巡逻的侍卫。' },
   { s: 'os', f: 'sweat', t: '贴着墙根走，别被灯笼照到……' },
-  { game: 'escape', dur: 16, lives: 2, failDeath: '061' },
+  { game: 'escape', dur: 16, lives: 3, failDeath: '061' },
   { bg: 'garden_night', music: 'mystery', cast: [['me', 'normal', 'L'], ['cuilv', 'cry', 'R']] },
   { s: 'n', t: '绛雪轩里黑漆漆的。角落里缩着一个人影，是翠缕。' },
   { s: 'cuilv', f: 'cry', t: '别、别抓我！……是你？你来做什么？来看我笑话？' },
