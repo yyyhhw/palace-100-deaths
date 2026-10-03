@@ -4,7 +4,7 @@
 'use strict';
 const N = {};
 const LBL = { trust_tao: '🍑 小桃信任', trust_lu: '🛡️ 陆峥信任', kill: '🔪 贵妃杀意', trust_hou: '🙏 太后信任', intel: '🕸️ 情报', ayun: '🧺 阿芸好感' };
-const add = (k, by) => G => { G.run.cnt[k] = Math.max(0, (G.run.cnt[k] || 0) + by); P.UI.toast(`${LBL[k]} ${by > 0 ? '+' : ''}${by}`, 'info', 1400); };
+const add = (k, by) => G => { G.run.cnt[k] = Math.max(0, (G.run.cnt[k] || 0) + by); if (/^trust|ayun/.test(k)) G.run.cnt[k] = Math.min(100, G.run.cnt[k]); P.UI.toast(`${LBL[k]} ${by > 0 ? '+' : ''}${by}`, 'info', 1400); };
 const C = (G, k) => G.cnt(k);
 const side = G => G.flag('side');
 
@@ -219,7 +219,7 @@ N.c3_d50 = [
   { s: 'taihou', f: 'smile', t: '来来来，坐。听说你下五子棋把皇帝都赢哭了？今儿陪哀家打几把。' },
   { s: 'os', f: 'think', t: '陪领导打牌，核心原则只有一条：让领导赢，但不能让领导看出来你在让。' },
   { game: 'cards', rounds: 5, failDeath: '048' },
-  G => { const r = G.flag('game_cards') || {}; const add2 = r.happy ? 20 : 10; G.run.cnt.trust_hou = (G.run.cnt.trust_hou || 0) + add2; P.UI.toast('🙏 太后信任 +' + add2, 'info', 1600); },
+  G => { const r = G.flag('game_cards') || {}; const add2 = r.happy ? 20 : 10; G.run.cnt.trust_hou = Math.min(100, (G.run.cnt.trust_hou || 0) + add2); P.UI.toast('🙏 太后信任 +' + add2, 'info', 1600); },
   { if: G => (G.flag('game_cards') || {}).happy, then: [{ s: 'taihou', f: 'smile', t: '有来有回，这才叫打牌！哀家好久没这么痛快了。' }],
     else: [{ s: 'taihou', f: 'think', t: '你这丫头，放水放得太明显了。……不过哀家赢了，开心。' }] },
   { s: 'n', t: '太后一边洗牌，一边心情很好地哼起了小曲。' },
