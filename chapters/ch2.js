@@ -499,7 +499,7 @@ N.c2_choke = [
         { s: 'emperor', f: 'normal', t: '……这是什么功夫？' },
         { s: 'me', f: 'smile', t: '回皇上，这叫……海、海氏救驾法。' },
         { s: 'emperor', f: 'smile', t: '救驾有功！赏！' },
-        { fx: { 圣眷: 20, 名声: 10 } }, add('kill', 30), { set: { savedEmperor: true } }, add('silver', 50),
+        { fx: { 圣眷: 20, 名声: 10 } }, add('kill', 20), { set: { savedEmperor: true } }, add('silver', 50),
         { s: 'luzheng', f: 'smile', t: '（小声）……刚才那招，能教卑职吗？' },
       ], else: [
         { s: 'luzheng', f: 'angry', t: '大胆！竟敢从背后勒住皇上——有刺客！！', shake: 0.9 },
@@ -570,8 +570,8 @@ N.c2_tao_ask = [
   { s: 'xiaotao', f: 'cry', t: '奴婢不敢！奴婢死也不会害小主！可是弟弟他……呜呜……' },
   { s: 'os', f: 'shock', t: '贵妃这是要从我身边下手！' },
   { c: [
-    { need: G => G.flag('anNet'), t: '让小安子托御膳房的路子，把她弟弟救出来', then: [{ s: 'n', t: '小安子拍胸脯：“御膳房送菜的车，哪儿都去得！”当晚，小桃的弟弟就被偷偷送出了宫。' }, add('trust_tao', 30), add('kill', 20), { set: { taoSaved: true } }] },
-    { need: G => G.cnt('silver') >= 100, t: '拿一百两银子，替她把弟弟赎出来', then: [G => { G.run.cnt.silver -= 100; }, { toast: '💰 银两 -100' }, add('trust_tao', 30), add('kill', 20), { set: { taoSaved: true } }, { s: 'xiaotao', f: 'cry', t: '小主……奴婢这条命，以后就是小主的！' }] },
+    { need: G => G.flag('anNet'), t: '让小安子托御膳房的路子，把她弟弟救出来', then: [{ s: 'n', t: '小安子拍胸脯：“御膳房送菜的车，哪儿都去得！”当晚，小桃的弟弟就被偷偷送出了宫。' }, add('trust_tao', 30), add('kill', 10), { set: { taoSaved: true } }] },
+    { need: G => G.cnt('silver') >= 100, t: '拿一百两银子，替她把弟弟赎出来', then: [G => { G.run.cnt.silver -= 100; }, { toast: '💰 银两 -100' }, add('trust_tao', 30), add('kill', 10), { set: { taoSaved: true } }, { s: 'xiaotao', f: 'cry', t: '小主……奴婢这条命，以后就是小主的！' }] },
     { t: '抱抱她：“别怕，我们一起想办法。”', then: [add('trust_tao', 15), { s: 'xiaotao', f: 'cry', t: '嗯……！' }] },
   ] },
   { go: 'c2_tao_check' },
