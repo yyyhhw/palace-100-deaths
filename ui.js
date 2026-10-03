@@ -391,10 +391,12 @@ UI.relHelp = function (r) {
   if (r.ch === 'ch2' || r.ch === 'ch3') {
     rows.push(['🍑 小桃信任', c.trust_tao || 0, '太低会被人收买；≥40 关键时刻会为你作证。']);
     rows.push(['🛡️ 陆峥信任', c.trust_lu || 0, '御前侍卫。≥40 才不会把你当刺客。']);
-    rows.push(['🐱 糯米好感', c.cat || 0, '御猫。好感太高……午睡记得关窗。']);
-    rows.push(['🔪 贵妃杀意', c.kill || 0, '≥100 时千万别走长春宫的近路。']);
+    if (r.ch === 'ch2') rows.push(['🐱 糯米好感', c.cat || 0, '御猫。好感太高……午睡记得关窗。']);
+    rows.push(['🔪 贵妃杀意', c.kill || 0, r.ch === 'ch2' ? '≥100 时千万别走长春宫的近路。' : '太高时，贵妃会在人前对你发难。']);
+    if (r.ch === 'ch3') rows.push(['🙏 太后信任', c.trust_hou || 0, '≥40 时，太后会在关键时刻替你说话。']);
     rows.push(['🕸️ 情报', c.intel || 0, '小安子、假山八卦、陆峥……关键时刻能救命。']);
-    rows.push(['💰 银两', c.silver || 0, '超过 300 两太招摇。']);
+    if (r.ch === 'ch2') rows.push(['💰 银两', c.silver || 0, '超过 300 两太招摇。']);
+    if (r.ch === 'ch3' && c.ayun) rows.push(['🧺 阿芸', c.ayun, '浣衣局的小宫女，知道各宫衣物的去向。']);
   }
   return rows.length ? '<hr>' + rows.map(x => `<p><b>${x[0]} ${x[1]}</b><br><small>${x[2]}</small></p>`).join('') : '';
 };
