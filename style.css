@@ -244,6 +244,30 @@ body.land .stpanel{width:45%;max-height:none;border-top:0;border-left:4px solid 
 .tbox{width:min(380px,100%);background:#fffaf0;border:4px solid var(--ink);border-radius:18px;padding:16px;text-align:center;animation:pop .3s}
 .tbox h3{margin:0 0 6px;font-family:var(--serif);font-size:24px;color:var(--red2)}.tbox p{line-height:1.6;margin:6px 0}.tbox .terr{font-size:13px;color:#b0303a}.tbox .btn{width:100%;margin-top:8px}
 
+
+/* ---------- 第二章小游戏 ---------- */
+#gameOv.gomoku,#gameOv.milktea,#gameOv.embroider{touch-action:none;background:linear-gradient(#f6e7c8,#e9cf9c);display:none;flex-direction:column;align-items:center;padding:calc(8px + var(--sat)) 10px calc(10px + var(--sab));gap:8px}
+#gameOv.gomoku.show,#gameOv.milktea.show,#gameOv.embroider.show{display:flex}
+.ghud{width:min(560px,100%);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;background:rgba(255,248,234,.94);border:3px solid var(--ink);border-radius:14px;padding:6px 12px;font-weight:700;font-size:14px}
+.ghud b{font-family:var(--serif);color:var(--red2);font-size:17px}
+.gboard{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+.gcv{width:min(92vw,calc(100vh - 170px),560px);height:min(92vw,calc(100vh - 170px),560px);display:block;touch-action:none}
+.gfoot{width:min(560px,100%);display:flex;gap:8px;align-items:center;justify-content:space-between}
+.gmsg{font-weight:700;font-size:14px;flex:1}
+.gfoot .btn{min-height:40px;padding:6px 12px;font-size:14px}
+body.land .gcv{width:min(calc(100vh - 150px),70vw);height:min(calc(100vh - 150px),70vw)}
+.mcv{width:min(560px,100%);flex:1;min-height:120px;border:3px solid var(--ink);border-radius:14px;display:block}
+.mord{width:min(560px,100%);background:#fffaf0;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:700;font-size:15px;display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.mord em{font-style:normal;opacity:.5}
+.mchip{display:inline-block;padding:2px 8px;border-radius:999px;border:2px solid #c9a87a;background:#fff4dc}
+.mchip.ok{background:#c9efc0;border-color:#2a7a3a;text-decoration:line-through}.mchip.nx{border-color:var(--red);animation:bob 1s infinite}
+.mpat{width:min(560px,100%);height:10px;border:2px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden}.mpat i{display:block;height:100%;background:#7fb8a8}
+.mbtnz{width:min(560px,100%);display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ming{min-height:58px;font-size:15px;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;touch-action:manipulation}
+.ming span{font-size:24px;line-height:1.1}.ming.hit{transform:scale(.92);background:var(--gold)}
+body.land .mbtnz{grid-template-columns:repeat(6,1fr)}body.land .ming{min-height:50px}
+.ecv{width:min(620px,100%);flex:1;min-height:200px;border:3px solid var(--ink);border-radius:14px;display:block;touch-action:none}
+
 /* ---------- 动画 ---------- */
 @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}

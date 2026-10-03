@@ -36,7 +36,7 @@ UI.hud = function () {
 UI.statsHelp = function () {
   const r = G.run; if (!r) return;
   const tips = { 圣眷: '皇上的注意力。太低谁都能欺负你，太高会招人恨。', 名声: '宫里人对你的评价。选秀看它。', 健康: '熬夜、罚跪、饿肚子都会扣。', 警觉: '越高越容易识破陷阱（≥30 能闻出香里的猫腻）。', 疑心: '别人觉得你“未卜先知”的程度。别太像先知。', 规矩: '桂嬷嬷眼里的你。选秀也看它。' };
-  UI.modal('📜 属性说明', G.STAT_KEYS.map(k => `<p><b>${G.STAT_ICON[k]} ${k} ${r.stats[k]}</b><br><small>${tips[k]}</small></p>`).join('') + `<p><small>物品：${Object.keys(r.items).filter(k => r.items[k] > 0).join('、') || '无'}</small></p>`);
+  UI.modal('📜 属性说明', G.STAT_KEYS.map(k => `<p><b>${G.STAT_ICON[k]} ${k} ${r.stats[k]}</b><br><small>${tips[k]}</small></p>`).join('') + `<p><small>物品：${Object.keys(r.items).filter(k => r.items[k] > 0).map(k => r.items[k] > 1 ? k + '×' + r.items[k] : k).join('、') || '无'}</small></p>` + (UI.relHelp ? UI.relHelp(r) : ''));
 };
 UI.toast = function (msg, kind, ms) {
   const t = el('div', 'toast ' + (kind || ''), esc(msg)); $('#toasts').appendChild(t);
@@ -128,7 +128,7 @@ UI.choose = function (opts, st, my) {
     if (st.q) { box.appendChild(el('div', 'cq', esc(G.render(st.q)))); }
     const list = opts.filter(o => (!o.need || o.need(G)) && (!o.mem || G.mem(o.mem)) && (!o.know || G.know(o.know)));
     list.forEach((o, idx) => {
-      const b = el('button', 'choice' + (o.mem || o.know ? ' memo' : '') + ((o.death || o.danger) && G.meta.settings.sixth !== false ? ' danger' : ''));
+      const b = el('button', 'choice' + (o.mem || o.know ? ' memo' : '') + ((o.death || (typeof o.danger === 'function' ? o.danger(G) : o.danger)) && G.meta.settings.sixth !== false ? ' danger' : ''));
       let html = (o.mem || o.know ? '<span class="crys">🔮</span>' : '') + esc(G.render(o.t));
       const did = o.death || (typeof o.danger === 'string' ? o.danger : null);
       if (did && G.died(did)) html += '<span class="gb">👻 已收录</span>';
@@ -247,7 +247,10 @@ UI.station = function (d) {
   const cp = G.run.cp;
   const b1 = ov.querySelector('.rb'); b1.innerHTML = '🍵 不喝孟婆汤 · 重生<small>' + (cp ? '回到「' + esc(G.run.cpLabel || '本日清晨') + '」' : '回到入宫马车上') + '</small>';
   b1.onclick = async () => { AU.sfx('select'); if (needRename) { await UI.nameInput(needRename, { msg: needRename === 'modern' ? '孟婆：“写方块字！”' : '孟婆：“名字惹的祸，改个名再走。”' }); } leave(); G.rebirth(false); };
-  ov.querySelector('.rs').onclick = async () => { const ok = await UI.modal('回到马车上？', '<p>从入宫马车重新开始这一世（属性重置；图鉴、记忆、名字都会保留）。</p>', [{ t: '取消', v: false }, { t: '回到马车', v: true, cls: 'pri' }]); if (!ok) return; if (needRename) await UI.nameInput(needRename, { msg: '孟婆：“名字惹的祸，改个名再走。”' }); leave(); G.rebirth(true); };
+  const rsB = ov.querySelector('.rs'), inCh = G.run.ch && G.run.ch !== 'ch0' && G.run.ch !== 'ch1' && P.chapters[G.run.ch];
+  rsB.innerHTML = inCh ? '📜 回到本章开头<small>' + esc(inCh.title || '') + '</small>' : '🐴 回到马车上';
+  if (inCh) rsB.onclick = async () => { const ok = await UI.modal('回到本章开头？', '<p>从「' + esc(inCh.title) + '」第一天重新开始（属性回到进入本章时；图鉴、记忆、名字都会保留）。</p>', [{ t: '取消', v: false }, { t: '回到本章开头', v: true, cls: 'pri' }]); if (!ok) return; if (needRename) await UI.nameInput(needRename, { msg: '孟婆：“名字惹的祸，改个名再走。”' }); leave(); G.startChapter(G.run.ch); };
+  else rsB.onclick = async () => { const ok = await UI.modal('回到马车上？', '<p>从入宫马车重新开始这一世（属性重置；图鉴、记忆、名字都会保留）。</p>', [{ t: '取消', v: false }, { t: '回到马车', v: true, cls: 'pri' }]); if (!ok) return; if (needRename) await UI.nameInput(needRename, { msg: '孟婆：“名字惹的祸，改个名再走。”' }); leave(); G.rebirth(true); };
   ov.querySelector('.rg').onclick = () => { AU.sfx('page'); UI.gallery(); };
   ov.querySelector('.rn').onclick = async () => { AU.sfx('tap'); const which = await UI.modal('✍️ 找孟婆改名', '<p>孟婆：“又改？生死簿都被你涂花了。”</p>', [{ t: '改现代名', v: 'modern' }, { t: '改宫中名', v: 'palace', cls: 'pri' }, { t: '算了', v: null }]); if (which) await UI.nameInput(which, {}); };
   ov.querySelector('.rn').classList.toggle('hl', !!needRename);
@@ -268,7 +271,7 @@ let galLoop = null;
 UI.gallery = function (tab) {
   const ov = $('#galleryOv'); tab = tab || 'death';
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
-  ov.querySelector('.gcount').innerHTML = `已收录 <b>${n}</b> / 100　番外 <b>${['E01', 'E02'].filter(k => G.meta.deaths[k]).length}</b> / 2　记忆 <b>${Object.keys(G.meta.mems).length}</b> / 24`;
+  ov.querySelector('.gcount').innerHTML = `已收录 <b>${n}</b> / 100　番外 <b>${P.DEATHS.filter(d => d.extra && G.meta.deaths[d.id]).length}</b> / ${P.DEATHS.filter(d => d.extra).length}　记忆 <b>${Object.keys(G.meta.mems).length}</b> / 24`;
   $$('#galleryOv .tab').forEach(t => { t.classList.toggle('on', t.dataset.tab === tab); t.onclick = () => { AU.sfx('page'); UI.gallery(t.dataset.tab); }; });
   const grid = ov.querySelector('.ggrid'); grid.innerHTML = ''; grid.className = 'ggrid ' + tab;
   if (tab === 'death') {
@@ -283,7 +286,7 @@ UI.gallery = function (tab) {
   } else {
     P.MEMORIES.forEach(m => {
       const got = G.meta.mems[m.id];
-      const cell = el('div', 'mcell' + (got ? ' got' : ''), `<i>${m.id}</i><b>${got ? esc(m.title) : '？？？'}</b><small>${got ? esc(m.text || m.src) : (m.ch1 ? '第一章可获得 · ' + esc(m.riddle || '') : '后续章节开放')}</small>`);
+      const cell = el('div', 'mcell' + (got ? ' got' : ''), `<i>${m.id}</i><b>${got ? esc(m.title) : '？？？'}</b><small>${got ? esc(m.text || m.src) : (m.chap && P.chapters['ch' + m.chap] ? (G.CH_NAME['ch' + m.chap] || '') + '可获得 · ' + esc(m.riddle || '') : '后续章节开放')}</small>`);
       grid.appendChild(cell);
     });
   }
@@ -334,7 +337,8 @@ UI.title = function () {
   const has = G.run && G.run.node;
   ov.querySelector('.tcont').style.display = has ? '' : 'none';
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
-  ov.querySelector('.tinfo').innerHTML = (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (G.meta.clear.ch1 ? ' · 🏅 第一章已通关' : '');
+  ov.querySelector('.tinfo').innerHTML = (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (G.meta.clear.ch1 ? ' · 🏅 ' + ['ch1', 'ch2', 'ch3'].filter(k => G.meta.clear[k]).map(k => G.CH_NAME[k]).join('、') + '已通关' : '');
+  const tch = ov.querySelector('.tchap'); if (tch) { tch.style.display = G.meta.clear.ch1 ? '' : 'none'; tch.onclick = () => { AU.unlock(); AU.sfx('page'); UI.chapterSelect(); }; }
   ov.querySelector('.tnew').onclick = async () => {
     AU.unlock(); AU.sfx('select');
     if (has) { const ok = await UI.modal('重新开始？', '<p>重新开始会覆盖当前这一世的进度。<br>《百死图鉴》、记忆碎片和名字会保留。</p>', [{ t: '取消', v: false }, { t: '重新开始', v: true, cls: 'pri' }]); if (!ok) return; }
@@ -350,19 +354,48 @@ UI.chapterEnd = function (chId, st) {
   return new Promise(res => {
     const ov = $('#endOv'); const r = G.run;
     G.meta.clear[chId] = G.meta.clear[chId] || { at: Date.now(), life: G.meta.lives, rank: r.flags.rank }; G.save();
-    const chDeaths = P.DEATHS.filter(d => d.playable);
+    const chName = G.CH_NAME[chId]; const chDeaths = P.DEATHS.filter(d => d.playable && d.ch === chName); const allP = P.DEATHS.filter(d => d.playable); const nxt = st.next && P.chapters[st.next];
     const got = chDeaths.filter(d => G.meta.deaths[d.id]).length;
     const mins = Math.max(1, Math.round((Date.now() - (r.started || Date.now())) / 60000));
     ov.querySelector('.etitle').textContent = st.title || '第一章 · 通关！';
     ov.querySelector('.ebody').innerHTML = `<p class="erank">${esc(G.render(st.rankText || '{宫名}，你活下来了！'))}</p>
       <ul><li>🏯 结果：<b>${esc(r.flags.rankName || r.flags.rank || '留宫')}</b></li><li>🔁 本次轮回：第 <b>${G.meta.lives}</b> 世（累计死亡 ${G.meta.totalDeaths} 次）</li>
-      <li>📖 本版本死法收集：<b>${got}</b> / ${chDeaths.length}</li><li>🔮 记忆碎片：<b>${Object.keys(G.meta.mems).length}</b> / 24</li>
+      <li>📖 本章死法收集：<b>${got}</b> / ${chDeaths.length}（全部已开放：${allP.filter(d => G.meta.deaths[d.id]).length} / ${allP.length}）</li><li>🔮 记忆碎片：<b>${Object.keys(G.meta.mems).length}</b> / 24</li>
       <li>${G.STAT_KEYS.map(k => G.STAT_ICON[k] + k + ' ' + r.stats[k]).join('　')}</li></ul>
-      <p class="tease">第二章《立足 · 永和宫偏殿》敬请期待——<br>听说那位温柔的宁嫔娘娘，已经在给你熬汤了。</p>`;
+      <p class="tease">${nxt ? (st.teaseNext || '下一章已开放！') : (st.tease || '下一章敬请期待——')}</p>`;
+    const en = ov.querySelector('.en'); en.style.display = nxt ? '' : 'none'; ov.querySelector('.et').classList.toggle('pri', !nxt); if (nxt) en.innerHTML = '▶ 进入' + esc(nxt.title || G.CH_NAME[st.next]);
+    en.onclick = () => { AU.sfx('select'); hide('#endOv'); G.enterChapter(st.next); res(); };
     show('#endOv'); G.confetti(); AU.sfx('fanfare'); AU.setMood('happy');
     ov.querySelector('.eg').onclick = () => { AU.sfx('page'); UI.gallery(); };
-    ov.querySelector('.er').onclick = () => { AU.sfx('select'); hide('#endOv'); G.rebirth(true); res(); };
+    ov.querySelector('.er').innerHTML = chId === 'ch1' ? '🔁 再来一世（收集死法）' : '🔁 重玩本章（收集死法）';
+    ov.querySelector('.er').onclick = () => { AU.sfx('select'); hide('#endOv'); if (chId === 'ch1') G.rebirth(true); else G.startChapter(chId); res(); };
     ov.querySelector('.et').onclick = () => { AU.sfx('tap'); hide('#endOv'); G.run.node = null; G.save(); UI.title(); res(); };
   });
+};
+
+/* ---------- 章节选择 / 关系值 ---------- */
+UI.chapterSelect = async function () {
+  const list = ['ch1', 'ch2', 'ch3'].filter(k => P.chapters[k]);
+  const html = '<div class="chsel">' + list.map(k => { const ch = P.chapters[k], un = G.chapterUnlocked(k), cl = G.meta.clear[k];
+    return `<p><b>${esc(ch.title)}</b>${cl ? ' 🏅' : ''}<br><small>${un ? esc(ch.blurb || '') : '🔒 通关上一章后解锁'}</small></p>`; }).join('') + '</div><p><small>从章节开头开始会覆盖“继续这一世”的进度；图鉴、记忆、名字都会保留。</small></p>';
+  const btns = list.filter(k => G.chapterUnlocked(k)).map(k => ({ t: '▶ ' + G.CH_NAME[k], v: k, cls: 'pri' })).concat([{ t: '返回', v: null }]);
+  const v = await UI.modal('📚 章节选择', html, btns);
+  if (!v) return;
+  if (G.run && G.run.node) { const ok = await UI.modal('覆盖当前进度？', '<p>“继续这一世”的进度会被替换。</p>', [{ t: '取消', v: false }, { t: '确定', v: true, cls: 'pri' }]); if (!ok) return; }
+  hide('#titleOv'); document.body.classList.remove('nohud');
+  if (v === 'ch1') { G.newGame(); return; }
+  G.startChapter(v);
+};
+UI.relHelp = function (r) {
+  const c = r.cnt || {}; const rows = [];
+  if (r.ch === 'ch2' || r.ch === 'ch3') {
+    rows.push(['🍑 小桃信任', c.trust_tao || 0, '太低会被人收买；≥40 关键时刻会为你作证。']);
+    rows.push(['🛡️ 陆峥信任', c.trust_lu || 0, '御前侍卫。≥40 才不会把你当刺客。']);
+    rows.push(['🐱 糯米好感', c.cat || 0, '御猫。好感太高……午睡记得关窗。']);
+    rows.push(['🔪 贵妃杀意', c.kill || 0, '≥100 时千万别走长春宫的近路。']);
+    rows.push(['🕸️ 情报', c.intel || 0, '小安子、假山八卦、陆峥……关键时刻能救命。']);
+    rows.push(['💰 银两', c.silver || 0, '超过 300 两太招摇。']);
+  }
+  return rows.length ? '<hr>' + rows.map(x => `<p><b>${x[0]} ${x[1]}</b><br><small>${x[2]}</small></p>`).join('') : '';
 };
 })(window.PALACE = window.PALACE || {});

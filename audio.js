@@ -321,6 +321,7 @@ AU.sfx = function (name) {
   if (STING[name]) AU.duck(STING[name][0], STING[name][1]);
   switch (name) {
     case 'tap': tone('sine', 1200, 900, t, 0.05, 0.12); break;
+    case 'coin': tone('square', 988, null, t, 0.08, 0.08, sfxBus, { lp: 4000 }); tone('square', 1319, null, t + 0.07, 0.25, 0.08, sfxBus, { lp: 4000 }); break;
     case 'select': pluck(76, t, 0.35, sfxBus, { dur: 0.8 }); pluck(81, t + 0.06, 0.3, sfxBus, { dur: 0.8 }); break;
     case 'gong': [1, 1.48, 2.1, 2.76].forEach((r, i) => tone('sine', 98 * r, 96 * r, t, 2.6 - i * 0.4, 0.28 / (i + 1), sfxBus, { a: 0.01, rev: true })); noise(t, 0.4, 0.15, 'lowpass', 400); break;
     case 'muyu': tone('sine', 520, 480, t, 0.12, 0.4); tone('sine', 1040, 900, t, 0.05, 0.1); break;

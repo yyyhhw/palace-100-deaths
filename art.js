@@ -341,6 +341,7 @@ function drawOrnFront(c, sp, t) {
     F(c, lg(c, 0, -14, 0, 12, [[0, '#fff1a8'], [1, '#e2a91f']]), '#8a5f10', 2.5); E(c, 0, 4, 4, 4); F(c, '#e0344a', OL, 1); E(c, -12, 7, 2.5, 2.5); F(c, '#3a8fd0'); E(c, 12, 7, 2.5, 2.5); F(c, '#3a8fd0');
     c.lineCap = 'round'; c.strokeStyle = '#8a5f10'; c.lineWidth = 3.5; c.beginPath(); c.moveTo(-34, 8); c.lineTo(34, 8); c.stroke(); c.strokeStyle = '#ffd86b'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-34, 8); c.lineTo(34, 8); c.stroke(); c.restore(); }
   if (orn.includes('phoenixOld')) { c.save(); c.translate(0, -302); c.beginPath(); c.moveTo(-28, 10); c.quadraticCurveTo(-14, -18, 0, -8); c.quadraticCurveTo(14, -18, 28, 10); c.quadraticCurveTo(0, 2, -28, 10); F(c, '#f2c24d', '#8a5f10', 2); E(c, 0, -4, 4, 4); F(c, '#3aa070', OL, 1); c.restore(); pin(c, -30, -270, 0.25, '#e8b84a', '#e0344a'); pin(c, 30, -270, Math.PI - 0.25, '#e8b84a', '#3aa070'); }
+  if (A.ORN_EXT) A.ORN_EXT(c, orn, t, sp);
 }
 function drawHat(c, sp, t) {
   if (sp.hat === 'eunuch') {
@@ -374,6 +375,7 @@ function drawProp(c, prop, t, x, y) {
     case 'note': c.rotate(0.15); rr(c, -16, -12, 32, 24, 2); F(c, '#fffbe8', OL, 2); c.strokeStyle = '#8a7a6a'; c.lineWidth = 1.2; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(-10, -5 + i * 6); c.lineTo(10, -5 + i * 6); c.stroke(); } break;
     case 'incense': rr(c, -20, -8, 40, 22, 6); F(c, '#c99a5a', OL, 2.5); flower(c, 0, 3, 6, '#ffd36b', '#e0344a'); c.strokeStyle = 'rgba(190,160,255,0.65)'; c.lineWidth = 3; c.beginPath(); for (let k = 0; k < 14; k++) c.lineTo(Math.sin(k * 0.6 + t * 2) * 6, -8 - k * 4); c.stroke(); break;
     case 'cake': E(c, 0, 6, 30, 8); F(c, '#fff', '#4a8fd0', 2); for (let i = 0; i < 3; i++) { rr(c, -22 + i * 15, -8 - (i === 1 ? 6 : 0), 16, 14, 3); F(c, '#ffe08a', OL, 1.8); flower(c, -14 + i * 15, -1 - (i === 1 ? 6 : 0), 3.5, '#ffb84a', '#fff'); } break;
+    default: if (A.PROP_EXT) A.PROP_EXT(c, prop, t);
   }
   c.restore();
 }

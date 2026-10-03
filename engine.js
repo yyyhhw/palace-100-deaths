@@ -47,7 +47,7 @@ G.render = function (text) {
   const n = G.meta.names, given = n.given || '', die = given ? (given.length >= 2 ? given.slice(-1).repeat(2) : given.repeat(2)) : '';
   return String(text).replace(/\{现代名\}/g, n.modern || '无名氏').replace(/\{姓\}/g, n.surname || '某').replace(/\{名\}/g, given || '某某')
     .replace(/\{宫名\}/g, G.palaceName() || '某某').replace(/\{叠字\}/g, die).replace(/\{世\}/g, G.meta.lives).replace(/\{死\}/g, G.meta.totalDeaths)
-    .replace(/\{位份\}/g, (G.run && G.run.flags.rank) || '秀女');
+    .replace(/\{位份\}/g, (G.run && G.run.flags.rank) || '秀女').replace(/\{情报\}/g, (G.run && G.run.cnt.intel) || 0).replace(/\{银两\}/g, (G.run && G.run.cnt.silver) || 0).replace(/\{证据\}/g, () => G.run ? ['anIntel', 'intelGossip', 'sawCuilv'].filter(k => G.run.flags['used_' + k]).length : 0).replace(/\{证人\}/g, () => G.run ? ['tao', 'lu'].filter(k => G.run.flags['used_' + k]).length : 0);
 };
 
 /* ---------- 状态操作 ---------- */
@@ -285,6 +285,26 @@ G.rebirth = function (fromStart) {
 };
 G.resume = function () { if (!G.run || !G.run.node) return false; restoreScene(G.run.scene); P.UI.hud(); AU.setMood(G.run.mood || 'day'); G.play(G.run.node, G.run.ip); return true; };
 G.newGame = function () { G.run = freshRun('ch0'); restoreScene({ bg: 'room', cast: [] }); P.UI.hud(); G.play(P.chapters.ch0.start, 0); };
+/* ---------- 章节衔接 / 章节选择 ---------- */
+G.CH_ORDER = ['ch0', 'ch1', 'ch2', 'ch3'];
+G.CH_NAME = { ch0: '序章', ch1: '第一章', ch2: '第二章', ch3: '第三章' };
+G.chapterUnlocked = id => id === 'ch1' || !!(G.meta.clear[G.CH_ORDER[G.CH_ORDER.indexOf(id) - 1]]) || !!(G.meta.carry && G.meta.carry[id]);
+G.enterChapter = function (chId) { // 从上一章章末直接进入：带着这一世的属性
+  const r = G.run || freshRun();
+  G.meta.carry = G.meta.carry || {};
+  G.meta.carry[chId] = { stats: clone(r.stats), flags: clone(r.flags), items: clone(r.items), at: Date.now() };
+  G.save(); G.startChapter(chId);
+};
+G.startChapter = function (chId) {
+  const ch = P.chapters[chId]; if (!ch) return false;
+  const carry = G.meta.carry && G.meta.carry[chId];
+  const run = freshRun(chId);
+  if (carry) { run.stats = clone(carry.stats); run.flags = clone(carry.flags); run.items = clone(carry.items); }
+  else if (ch.defaultRun) ch.defaultRun(run, G);
+  G.run = run; AU.stopSpeak && AU.stopSpeak();
+  restoreScene({ bg: ch.startBg || 'courtyard', cast: [] }); P.UI.hud(); AU.setMood(ch.startMood || 'day');
+  G.play(ch.start, 0); return true;
+};
 G.startNode = function (node, run) { G.run = Object.assign(freshRun(), run || {}); G.play(node, 0); };
 
 /* ---------- 启动 ---------- */

@@ -253,7 +253,7 @@ BG.cining = function (c, W, H) { // 慈宁宫
   rr(c, W * 0.18, H * 0.6, W * 0.64, H * 0.08, 8); F(c, '#2f7a5a', OL, 3);
   for (let i = 0; i < 5; i++) { c.save(); c.translate(W * 0.3 + i * W * 0.1, H * 0.635); c.rotate((i - 2) * 0.12); rr(c, -10, -14, 20, 28, 3); F(c, '#fff8ec', OL, 1.5); txt(c, ['万', '索', '筒', '红', '中'][i], 0, 0, 12, '#c0392b'); c.restore(); }
 };
-A.roofTiles = roofTiles; A.lantern = lantern; A.cloud = cloud; A.tree = tree;
+A.roofTiles = roofTiles; A.lantern = lantern; A.cloud = cloud; A.tree = tree; A.palaceWall = palaceWall; A.floorTiles = floorTiles; A.txt = txt; A.plaque = plaque; A.xiangyun = xiangyun;
 
 const cache = {};
 A.drawBG = function (c, name, W, H, t) {
@@ -300,6 +300,7 @@ function anim(c, name, W, H, t) {
   if (name === 'roof') { for (let i = 0; i < 3; i++) { const k = (t * 0.03 + i / 3) % 1; c.globalAlpha = 0.3; cloud(c, -100 + k * (W + 200), H * (0.15 + i * 0.12), H / 900, '#cfd6ff'); } c.globalAlpha = 1; }
   if (name === 'hall') { lantern(c, W * 0.2, H * 0.2, H / 650, t, true); lantern(c, W * 0.8, H * 0.2, H / 650, t, true); }
   if (name === 'room') { c.fillStyle = 'rgba(255,200,220,' + (0.05 + Math.sin(t * 5) * 0.03) + ')'; c.fillRect(W * 0.5, H * 0.3, W * 0.5, H * 0.4); }
+  if (A.ANIM_EXT) A.ANIM_EXT(c, name, W, H, t);
   c.restore();
 }
 
@@ -310,11 +311,12 @@ A.drawDeathScene = function (c, W, H, id, t) {
   c.fillStyle = lg(c, 0, 0, 0, H, [[0, '#fff8ea'], [1, '#f3e2c4']]); c.fillRect(0, 0, W, H);
   c.save(); c.translate(W / 2, H * 0.55); c.rotate(t * 0.15); c.fillStyle = 'rgba(232,184,74,0.2)'; for (let i = 0; i < 16; i++) { c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, W + H, i * TAU / 16, i * TAU / 16 + TAU / 32); c.closePath(); c.fill(); } c.restore();
   const s = H / 430, cx = W / 2, by = H * 0.97;
-  dprop(c, prop, cx, by, s, t, 'back');
+  const ext = A.DPROPS && A.DPROPS[prop];
+  if (ext && ext.back) { c.save(); ext.back(c, cx, by, s, t); c.restore(); } else dprop(c, prop, cx, by, s, t, 'back');
   if (prop === 'tea') A.drawChar(c, 'modern', cx, by - 8 * s, s, { t, ghost: true, face: 'dead', prop: 'none' });
   else if (prop === 'statue') A.drawChar(c, 'me', cx, by, s, { t, stone: true, face: 'dead', still: true });
   else A.drawChar(c, 'me', cx, by - 8 * s, s, { t, ghost: true, face: 'dead' });
-  dprop(c, prop, cx, by, s, t, 'front');
+  if (ext && ext.front) { c.save(); ext.front(c, cx, by, s, t); c.restore(); } else if (!ext) dprop(c, prop, cx, by, s, t, 'front');
   c.restore();
 };
 function dprop(c, prop, cx, by, s, t, layer) {

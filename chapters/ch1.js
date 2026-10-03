@@ -654,11 +654,12 @@ N.c1_end = [
   { s: 'taihou', f: 'think', t: '……有意思。和四十年前的我，有点像。' },
   { s: 'n', t: '太后推了推老花镜，低头看着手里的半面铜镜。镜子里，隐约有一道细细的裂痕。' },
   { s: 'taihou', f: 'smirk', t: '这一局，哀家先看看。' },
-  { chapterEnd: 'ch1', title: '第一章 · 入宫 · 通关！', rankText: '{宫名}，你活过了储秀宫！' },
+  { chapterEnd: 'ch1', next: 'ch2', title: '第一章 · 入宫 · 通关！', rankText: '{宫名}，你活过了储秀宫！',
+    tease: '第二章《立足 · 永和宫偏殿》敬请期待——<br>听说那位温柔的宁嫔娘娘，已经在给你熬汤了。', teaseNext: '第二章《立足 · 永和宫偏殿》已开放！<br>听说那位温柔的宁嫔娘娘，已经在给你熬汤了。' },
 ];
 
 P.registerChapter({
-  id: 'ch1', title: '第一章 · 入宫', start: 'c1_start', nodes: N,
+  id: 'ch1', title: '第一章 · 入宫', start: 'c1_start', nodes: N, blurb: '储秀宫 · 第 1–10 天。桂嬷嬷的规矩课、赵如意的安神香、太和殿选秀。（从序章开始）',
   deathMems: { '011': 'M02', '014': 'M02', '009': 'M07', '017': 'M01' },
 });
 })(window.PALACE = window.PALACE || {});
