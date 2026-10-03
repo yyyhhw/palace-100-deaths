@@ -23,7 +23,7 @@ Q.milktea = {
       const total = st.customers || 4, pat = st.patience || 15;
       const S = this.state = { idx: 0, total, served: 0, ruined: 0, earned: 0, order: [], step: 0, cup: [], left: pat, run: false, mood: 'normal', flashT: 0, cust: null };
       let alive = true, last = performance.now();
-      const upd = () => {
+      const upd = () => { if (!ov.isConnected || !ov.querySelector('canvas')) return;
         ov.querySelector('.msc').textContent = `客人 ${Math.min(S.idx + 1, total)}/${total} · 卖出 ${S.served} 杯 · 💰${S.earned} 两`;
         ov.querySelector('.mord').innerHTML = '订单：' + S.order.map((k, j) => `<span class="mchip${j < S.step ? ' ok' : ''}${j === S.step ? ' nx' : ''}">${IM[k].e}${IM[k].n}</span>`).join('<em>→</em>');
       };
@@ -52,7 +52,7 @@ Q.milktea = {
       };
       ov.querySelector('.tgo').onclick = e => { e.stopPropagation(); ov.querySelector('.tintro').remove(); S.run = true; next(); AU.sfx('select'); };
       const loop = now => {
-        if (!alive) return;
+        if (!alive || !cv.isConnected) { alive = false; return; }
         const dt = Math.min(0.05, (now - last) / 1000); last = now;
         if (S.run && S.cust) { S.left -= dt; if (S.left <= 0) { S.left = 0; after(false); } }
         if (S.flashT > 0) S.flashT -= dt;

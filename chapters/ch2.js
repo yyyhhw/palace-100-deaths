@@ -371,7 +371,7 @@ N.c2_d17 = [
   ] },
 ];
 N.c2_lu = [
-  { bg: 'courtyard', music: 'night', cast: [['me', 'normal', 'L']] },
+  { bg: 'lane_night', music: 'night', cast: [['me', 'normal', 'L']] },
   { s: 'n', t: '宫道上静悄悄的。你走着走着……迷路了。' },
   { s: 'n', name: '？？？', t: '站住！什么人？' },
   { enter: 'luzheng', face: 'angry', pos: 'R' },

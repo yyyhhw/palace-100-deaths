@@ -137,7 +137,7 @@ UI.choose = function (opts, st, my) {
       b.onclick = e => { e.stopPropagation(); if (box.dataset.lock) return; box.dataset.lock = '1'; b.classList.add('picked'); AU.sfx('stamp'); setTimeout(() => { UI.hideChoices(); res(o); }, 260); };
       box.appendChild(b);
     });
-    box.className = 'show'; delete box.dataset.lock;
+    box.className = 'show' + (list.length >= 5 ? ' many' : ''); delete box.dataset.lock;
     UI.lastChoices = list;
   });
 };

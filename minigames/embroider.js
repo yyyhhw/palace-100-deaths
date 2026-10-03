@@ -23,7 +23,7 @@ Q.embroider = {
       let alive = true, last = performance.now();
       const geo = () => { const r = cv.getBoundingClientRect(); const sc = Math.min(r.width, r.height) * 0.36; return { r, sc, cx: r.width / 2, cy: r.height * 0.55 }; };
       S.ptXY = j => { const { r, sc, cx, cy } = geo(); const p = S.pts[j]; return { x: r.left + cx + p[0] * sc, y: r.top + cy + p[1] * sc }; };
-      const upd = () => { S.prog = S.done / S.pts.length; ov.querySelector('.esc').textContent = `进度 ${Math.round(S.prog * 100)}% · 剩余 ${Math.ceil(S.left)} 秒`; };
+      const upd = () => { if (!ov.isConnected || !ov.querySelector('canvas')) return; S.prog = S.done / S.pts.length; ov.querySelector('.esc').textContent = `进度 ${Math.round(S.prog * 100)}% · 剩余 ${Math.ceil(S.left)} 秒`; };
       const finish = () => {
         if (S.end) return; S.end = true; S.run = false;
         const ok = S.prog >= need;
@@ -45,7 +45,7 @@ Q.embroider = {
       ov.querySelector('.tgo').onclick = e => { e.stopPropagation(); ov.querySelector('.tintro').remove(); S.run = true; AU.sfx('select'); };
       upd();
       const loop = now => {
-        if (!alive) return;
+        if (!alive || !cv.isConnected) { alive = false; return; }
         const dt = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
         if (S.run) { S.left -= dt; if (S.left <= 0) { S.left = 0; upd(); finish(); } else if ((t * 10 | 0) % 3 === 0) upd(); }
         const d = Math.min(2, devicePixelRatio || 1), r = cv.getBoundingClientRect(), W = r.width, H = r.height;

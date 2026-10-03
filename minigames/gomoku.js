@@ -42,11 +42,11 @@ Q.gomoku = {
       const cv = ov.querySelector('.gcv'), ctx = cv.getContext('2d');
       const S = this.state = { b: new Array(N * N).fill(0), turn: 1, game: 1, games: st.games || 3, wins: 0, losses: 0, results: [], run: false, last: -1, busy: false, lastWin: null, slip: st.slip == null ? 0.4 : st.slip, msg: '' };
       let alive = true;
-      const upd = () => { ov.querySelector('.gsc').textContent = `第 ${S.game}/${S.games} 局 · 你 ${S.wins} : ${S.losses} 皇上`; ov.querySelector('.gmsg').textContent = S.msg; };
+      const upd = () => { if (!ov.isConnected || !ov.querySelector('canvas')) return; ov.querySelector('.gsc').textContent = `第 ${S.game}/${S.games} 局 · 你 ${S.wins} : ${S.losses} 皇上`; ov.querySelector('.gmsg').textContent = S.msg; };
       const geo = () => { const r = cv.getBoundingClientRect(); const pad = r.width * 0.07, step = (r.width - pad * 2) / (N - 1); return { r, pad, step }; };
       S.cellXY = i => { const { r, pad, step } = geo(); return { x: r.left + pad + (i % N) * step, y: r.top + pad + (i / N | 0) * step }; };
       const draw = () => {
-        if (!alive) return;
+        if (!alive || !cv.isConnected) { alive = false; return; }
         const d = Math.min(2, devicePixelRatio || 1), r = cv.getBoundingClientRect(), W = r.width;
         if (cv.width !== (W * d | 0)) { cv.width = W * d | 0; cv.height = W * d | 0; }
         const c = ctx; c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, W, W);

@@ -18,7 +18,7 @@ Q.tea = {
       const err0 = G.cnt(EK);
       const S = this.state = { th: 0, w: 0, u: 0, prog: 0, spills: 0, err: err0, run: false, done: false, t: 0, gust: 0, gustT: 2.2, ev: '', evT: 0, cat: -1, slosh: 0, splash: 0, dur: st.dur || 17, who: WHO, keys: { l: false, r: false }, ptr: {} };
       ov.querySelector('.terr').textContent = st.warn || (err0 ? `（今天已经错了 ${err0} 次，再错 ${MAX - err0} 次就要罚跪！）` : '（洒 3 次就要去雨里罚跪哦）');
-      const upd = () => { ov.querySelector('.tspill').textContent = (st.errKey ? `洒出 ${S.spills}/${MAX}` : `洒出 ${S.spills} · 今日错误 ${S.err}/3`); ov.querySelector('.tprog i').style.width = (S.prog * 100) + '%'; };
+      const upd = () => { if (!ov.isConnected || !ov.querySelector('canvas')) return; ov.querySelector('.tspill').textContent = (st.errKey ? `洒出 ${S.spills}/${MAX}` : `洒出 ${S.spills} · 今日错误 ${S.err}/3`); ov.querySelector('.tprog i').style.width = (S.prog * 100) + '%'; };
       upd();
       const recomputeU = () => { if (!alive) return; const vals = Object.values(S.ptr); const l = S.keys.l || vals.includes(-1), r = S.keys.r || vals.includes(1); S.u = l && !r ? -1 : r && !l ? 1 : 0; ov.querySelector('.tl').classList.toggle('on', S.u < 0); ov.querySelector('.tr').classList.toggle('on', S.u > 0); };
       const down = e => { if (!S.run) return; const r = ov.getBoundingClientRect(); S.ptr[e.pointerId] = (e.clientX - r.left) < r.width / 2 ? -1 : 1; recomputeU(); e.preventDefault(); };
@@ -37,7 +37,7 @@ Q.tea = {
         box.querySelector('.tok').onclick = ev => { ev.stopPropagation(); alive = false; window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); ov.removeEventListener('pointerdown', down); ov.removeEventListener('pointerup', up); ov.removeEventListener('pointercancel', up); ov.removeEventListener('pointerleave', up); ov.className = ''; ov.innerHTML = ''; this.state = null; res({ spills: S.spills, fail, err: S.err, death: fail && st.failDeath ? st.failDeath : undefined }); };
       };
       const loop = now => {
-        if (!alive) return;
+        if (!alive || !cv.isConnected) { alive = false; return; }
         const dt = Math.min(0.04, (now - last) / 1000); last = now;
         const d = Math.min(2, devicePixelRatio || 1), r = cv.getBoundingClientRect(), W = r.width, H = r.height;
         if (cv.width !== (W * d | 0) || cv.height !== (H * d | 0)) { cv.width = W * d | 0; cv.height = H * d | 0; }
