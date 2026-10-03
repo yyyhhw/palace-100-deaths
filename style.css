@@ -305,10 +305,9 @@ body.land .logo .l2{font-size:min(5.6vw,58px);white-space:nowrap}
 .dbtnz,.xbtnz{width:min(620px,100%);display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.xbtnz{grid-template-columns:1fr 1fr}
 .dbtn,.xbtn{min-height:64px;font-size:16px;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:manipulation}
 .dbtn span{font-size:24px;line-height:1.1}.dbtn.hit{transform:scale(.92);background:var(--gold)}
-body.land .dbtn,body.land .xbtn{min-height:48px}
 .cmsg,.smsg{width:min(620px,100%);background:#fffaf0;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:700;font-size:15px;min-height:1.6em}
 .chand{width:min(620px,100%);display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;min-height:96px}
-.ccard{width:74px;height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;background:#fffaf0;border-color:#2a3a6a;touch-action:manipulation}
+.ccard{width:84px;height:116px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;background:#fffaf0;border-color:#2a3a6a;touch-action:manipulation}
 .ccard i{font-style:normal;font-size:18px}.ccard b{font-family:var(--serif);font-size:30px;color:#2a3a6a;line-height:1.1}.ccard small{opacity:.55;font-size:12px}
 .cres{font-weight:900;font-size:16px;padding:6px 10px;border-radius:10px;background:#fff4dc;border:2px solid #c9a87a}.cres.w{color:#2a7a3a}.cres.l{color:#8a1f2b}
-body.land .chand{min-height:72px}body.land .ccard{height:70px;width:60px}body.land .ccard b{font-size:22px}
+@media (max-height:500px){.chand{min-height:64px}.ccard{height:62px;width:56px}.ccard b{font-size:20px}.ccard i{font-size:13px}.dbtn,.xbtn{min-height:44px}.cmsg,.smsg{font-size:13px;padding:3px 8px}}

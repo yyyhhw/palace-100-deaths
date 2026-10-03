@@ -61,11 +61,11 @@ Q.cards = {
         const c = ctx; c.setTransform(d, 0, 0, d, 0, 0);
         c.fillStyle = U.lg(c, 0, 0, 0, H, [[0, '#f3e2c4'], [1, '#d9b98a']]); c.fillRect(0, 0, W, H);
         c.fillStyle = '#7a4a2a'; c.fillRect(0, H * 0.78, W, H * 0.22);
-        A.drawChar(c, 'taihou', W * 0.3, H * 1.02, H / 520, { t, face: S.face, pose: 'beads', prop: 'beads' });
-        if (S.hou) { const cw = Math.min(W * 0.16, H * 0.36), ch = cw * 1.5, x = W * 0.68, y = H * 0.44; c.save(); c.translate(x, y); c.rotate(Math.sin(t) * 0.03); U.rr(c, -cw / 2, -ch / 2, cw, ch, 8); U.F(c, '#fffaf0', '#8a1f2b', 3);
+        const port = W < H * 0.9; A.drawChar(c, 'taihou', W * (port ? 0.26 : 0.3), H * 1.02, Math.min(H / 520, W / 420), { t, face: S.face, pose: 'beads', prop: 'beads' });
+        if (S.hou) { const cw = Math.min(W * 0.16, H * 0.36), ch = cw * 1.5, x = W * (port ? 0.7 : 0.68), y = H * (port ? 0.3 : 0.44); c.save(); c.translate(x, y); c.rotate(Math.sin(t) * 0.03); U.rr(c, -cw / 2, -ch / 2, cw, ch, 8); U.F(c, '#fffaf0', '#8a1f2b', 3);
           c.fillStyle = '#8a1f2b'; c.font = `bold ${Math.round(cw * 0.5)}px "Noto Serif CJK SC",serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(NUM[S.hou], 0, 0); c.font = `${Math.round(cw * 0.22)}px sans-serif`; c.fillText(SUIT[S.hou % 4], 0, -ch * 0.33); c.restore();
-          c.fillStyle = '#5a3a2a'; c.font = `bold ${Math.round(H * 0.07)}px "Noto Serif CJK SC",serif`; c.textAlign = 'center'; c.fillText('太后出牌', x, y + ch / 2 + H * 0.07); }
-        if (S.played) { const cw = Math.min(W * 0.12, H * 0.28), x = W * 0.88, y = H * 0.5; U.rr(c, x - cw / 2, y - cw * 0.75, cw, cw * 1.5, 6); U.F(c, '#fff', '#2a3a6a', 3); c.fillStyle = '#2a3a6a'; c.font = `bold ${Math.round(cw * 0.5)}px "Noto Serif CJK SC",serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(NUM[S.played], x, y); }
+          c.fillStyle = '#5a3a2a'; c.font = `bold ${Math.round(Math.min(H * 0.07, W * 0.06))}px "Noto Serif CJK SC",serif`; c.textAlign = 'center'; c.fillText('太后出牌', x, y + ch / 2 + Math.min(H * 0.07, W * 0.07)); }
+        if (S.played) { const cw = Math.min(W * 0.12, H * 0.28), x = W * 0.88, y = H * (port ? 0.3 : 0.5); U.rr(c, x - cw / 2, y - cw * 0.75, cw, cw * 1.5, 6); U.F(c, '#fff', '#2a3a6a', 3); c.fillStyle = '#2a3a6a'; c.font = `bold ${Math.round(cw * 0.5)}px "Noto Serif CJK SC",serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(NUM[S.played], x, y); }
         requestAnimationFrame(loop);
       };
       requestAnimationFrame(loop);

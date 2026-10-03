@@ -36,8 +36,8 @@ BG.taiye = function (c, W, H) { // 太液池·龙舟宴
 BG.shouyan = function (c, W, H) { // 慈宁宫寿宴
   c.fillStyle = lg(c, 0, 0, 0, H, [[0, '#7a1f2a'], [1, '#b8323a']]); c.fillRect(0, 0, W, H);
   c.fillStyle = 'rgba(255,210,120,0.12)'; for (let i = 0; i < 6; i++) c.fillRect(W * (0.05 + i * 0.18), H * 0.08, W * 0.04, H * 0.56);
-  plaque(c, '福寿康宁', W * 0.5, H * 0.08, Math.min(W * 0.34, H * 0.36), H * 0.06);
-  const r = Math.min(W * 0.11, H * 0.15); E(c, W * 0.5, H * 0.32, r, r); F(c, '#f2c24d', '#7a5210', 4); E(c, W * 0.5, H * 0.32, r * 0.86, r * 0.86); F(c, null, '#c0392b', 2); txt(c, '寿', W * 0.5, H * 0.33, r * 1.2, '#c0392b');
+  plaque(c, '福寿康宁', W * 0.5, H * 0.14, Math.min(W * 0.34, H * 0.36), H * 0.06);
+  const r = Math.min(W * 0.11, H * 0.13); E(c, W * 0.5, H * 0.36, r, r); F(c, '#f2c24d', '#7a5210', 4); E(c, W * 0.5, H * 0.36, r * 0.86, r * 0.86); F(c, null, '#c0392b', 2); txt(c, '寿', W * 0.5, H * 0.37, r * 1.2, '#c0392b');
   for (let i = 0; i < 4; i++) xiangyun(c, W * (0.18 + (i % 2) * 0.64), H * (0.26 + (i > 1 ? 0.12 : 0)), H / 500, '#f2c24d');
   floorTiles(c, H * 0.62, W, H, '#e9d2a6', '#c9ae80');
   c.fillStyle = '#c0392b'; c.beginPath(); c.moveTo(W * 0.4, H * 0.62); c.lineTo(W * 0.6, H * 0.62); c.lineTo(W * 0.72, H); c.lineTo(W * 0.28, H); c.fill();
@@ -50,10 +50,17 @@ BG.fotang = function (c, W, H) { // 慈宁宫小佛堂
   const r = Math.min(W * 0.16, H * 0.22);
   E(c, W * 0.5, H * 0.34, r * 1.6, r * 1.6); F(c, rg(c, W * 0.5, H * 0.34, r * 0.4, r * 1.6, [[0, 'rgba(255,220,140,0.55)'], [1, 'rgba(255,220,140,0)']]));
   E(c, W * 0.5, H * 0.3, r, r); F(c, null, '#e8b84a', 4);
-  // 莲台 + 佛像剪影
-  E(c, W * 0.5, H * 0.22, r * 0.22, r * 0.24); F(c, '#c99a3a', '#7a5210', 2);
-  c.beginPath(); c.moveTo(W * 0.5 - r * 0.5, H * 0.5); c.quadraticCurveTo(W * 0.5 - r * 0.45, H * 0.3, W * 0.5, H * 0.28); c.quadraticCurveTo(W * 0.5 + r * 0.45, H * 0.3, W * 0.5 + r * 0.5, H * 0.5); c.closePath(); F(c, '#c99a3a', '#7a5210', 2);
-  for (let i = 0; i < 7; i++) { c.save(); c.translate(W * 0.5 + (i - 3) * r * 0.16, H * 0.52); E(c, 0, 0, r * 0.1, r * 0.06); F(c, '#f3a6b8', '#a8506a', 1.5); c.restore(); }
+  // 佛像（坐姿剪影）+ 莲台
+  const bx = W * 0.5, hy = H * 0.24, hr = r * 0.17;
+  c.beginPath(); c.moveTo(bx - hr * 0.7, hy + hr * 0.9); c.quadraticCurveTo(bx - r * 0.5, hy + hr * 1.3, bx - r * 0.55, hy + r * 0.75); c.quadraticCurveTo(bx - r * 0.75, hy + r * 1.05, bx - r * 0.7, H * 0.5); c.lineTo(bx + r * 0.7, H * 0.5); c.quadraticCurveTo(bx + r * 0.75, hy + r * 1.05, bx + r * 0.55, hy + r * 0.75); c.quadraticCurveTo(bx + r * 0.5, hy + hr * 1.3, bx + hr * 0.7, hy + hr * 0.9); c.closePath();
+  F(c, lg(c, 0, hy, 0, H * 0.5, [[0, '#f0c860'], [1, '#b8862a']]), '#7a5210', 2);
+  c.strokeStyle = 'rgba(122,82,16,0.6)'; c.lineWidth = 2; c.beginPath(); c.moveTo(bx - r * 0.25, hy + r * 0.85); c.quadraticCurveTo(bx, hy + r * 1.05, bx + r * 0.25, hy + r * 0.85); c.stroke(); // 手印
+  c.beginPath(); c.moveTo(bx - r * 0.6, H * 0.47); c.quadraticCurveTo(bx, H * 0.44, bx + r * 0.6, H * 0.47); c.stroke(); // 盘腿
+  E(c, bx, hy, hr, hr * 1.1); F(c, '#f0c860', '#7a5210', 2); E(c, bx, hy - hr * 1.05, hr * 0.42, hr * 0.38); F(c, '#d9a640', '#7a5210', 1.5);
+  E(c, bx - hr * 1.0, hy + hr * 0.2, hr * 0.22, hr * 0.5); F(c, '#e8b850', '#7a5210', 1.2); E(c, bx + hr * 1.0, hy + hr * 0.2, hr * 0.22, hr * 0.5); F(c, '#e8b850', '#7a5210', 1.2);
+  c.strokeStyle = '#7a5210'; c.lineWidth = 1.5; c.beginPath(); c.arc(bx - hr * 0.38, hy + hr * 0.05, hr * 0.2, 0.2, Math.PI - 0.2); c.moveTo(bx + hr * 0.58, hy + hr * 0.05); c.arc(bx + hr * 0.38, hy + hr * 0.05, hr * 0.2, 0.2, Math.PI - 0.2); c.stroke();
+  E(c, bx, hy - hr * 0.35, hr * 0.06, hr * 0.06); F(c, '#c0392b');
+  for (let i = 0; i < 9; i++) { c.save(); c.translate(bx + (i - 4) * r * 0.17, H * 0.515); E(c, 0, 0, r * 0.11, r * 0.06); F(c, '#f3a6b8', '#a8506a', 1.5); c.restore(); }
   c.fillStyle = '#8a1f2b'; c.fillRect(0, H * 0.04, W, H * 0.03); for (let i = 0; i < 10; i++) { c.fillStyle = i % 2 ? '#f2c24d' : '#c0392b'; c.fillRect(W * i / 10, H * 0.07, W / 10, H * 0.08); }
   rr(c, W * 0.25, H * 0.58, W * 0.5, H * 0.06, 4); F(c, '#8a4a2a', OL, 2.5); // 供桌
   rr(c, W * 0.45, H * 0.52, W * 0.1, H * 0.06, 6); F(c, '#c99a3a', OL, 2); // 香炉
@@ -61,8 +68,8 @@ BG.fotang = function (c, W, H) { // 慈宁宫小佛堂
 };
 BG.taiyiyuan = function (c, W, H) { // 太医院·药柜
   c.fillStyle = lg(c, 0, 0, 0, H, [[0, '#efe6d2'], [1, '#d9c9a8']]); c.fillRect(0, 0, W, H);
-  plaque(c, '太医院', W * 0.5, H * 0.07, Math.min(W * 0.22, H * 0.24), H * 0.05);
-  const x0 = W * 0.05, y0 = H * 0.14, cw = W * 0.9, ch = H * 0.48, cols = 12, rows = 6;
+  plaque(c, '太医院', W * 0.5, H * 0.135, Math.min(W * 0.22, H * 0.24), H * 0.05);
+  const x0 = W * 0.05, y0 = H * 0.19, cw = W * 0.9, ch = H * 0.43, cols = 12, rows = 6;
   rr(c, x0 - 6, y0 - 6, cw + 12, ch + 12, 4); F(c, '#7a4a2a', OL, 3);
   const names = ['当归', '黄芪', '甘草', '川芎', '白术', '茯苓', '人参', '枸杞', '红花', '杏仁', '半夏', '陈皮'];
   for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) { const x = x0 + i * cw / cols, y = y0 + j * ch / rows; rr(c, x + 2, y + 2, cw / cols - 4, ch / rows - 4, 2); F(c, '#b8804a', '#5a3418', 1.5); E(c, x + cw / cols / 2, y + ch / rows * 0.72, 3, 3); F(c, '#f2c24d'); if ((i + j) % 3 === 0) txt(c, names[(i * 7 + j) % 12], x + cw / cols / 2, y + ch / rows * 0.36, Math.min(cw / cols, ch / rows) * 0.26, '#3a2010'); }
@@ -81,7 +88,7 @@ BG.laundry = function (c, W, H) { // 浣衣局
 BG.shenxing = function (c, W, H) { // 慎刑司
   c.fillStyle = lg(c, 0, 0, 0, H, [[0, '#2a2a34'], [1, '#4a4a56']]); c.fillRect(0, 0, W, H);
   c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = 2; for (let y = 0; y < H * 0.62; y += H * 0.06) for (let x = ((y / (H * 0.06)) % 2) * 40; x < W; x += 80) c.strokeRect(x, y, 80, H * 0.06);
-  plaque(c, '慎刑司', W * 0.5, H * 0.08, Math.min(W * 0.22, H * 0.24), H * 0.05);
+  plaque(c, '慎刑司', W * 0.5, H * 0.135, Math.min(W * 0.22, H * 0.24), H * 0.05);
   const wx = W * 0.75, wy = H * 0.18, ww = W * 0.14, wh = H * 0.16; rr(c, wx, wy, ww, wh, 2); F(c, '#9ab0d0', OL, 3); c.fillStyle = '#222'; for (let i = 1; i < 5; i++) c.fillRect(wx + i * ww / 5 - 2, wy, 4, wh);
   c.fillStyle = '#3a3640'; c.fillRect(0, H * 0.62, W, H * 0.38);
   rr(c, W * 0.32, H * 0.64, W * 0.36, H * 0.05, 3); F(c, '#5a3e28', OL, 2.5);
