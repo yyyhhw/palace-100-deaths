@@ -76,7 +76,7 @@ function draw(c, d, W, H, S, t) {
   const s = Math.min(H / 560, W / 400), mx = W * (W > H ? 0.4 : 0.45), my = H * 0.92;
   A.drawChar(c, 'me', mx, my, s, { t: t * 1.6, face: S.splash > 0 ? 'shock' : Math.abs(S.th) > 0.35 ? 'panic' : 'normal', pose: 'tray', tilt: -S.th * 0.15 });
   // 托盘 + 茶杯
-  c.save(); c.translate(mx, my - 112 * s); c.rotate(S.th); c.scale(s, s);
+  c.save(); c.translate(mx, my - 86 * s); c.rotate(S.th); c.scale(s, s);
   U.rr(c, -62, -6, 124, 12, 5); U.F(c, '#b8604a', U.OL, 3); U.rr(c, -56, -10, 112, 6, 3); U.F(c, '#d8826a');
   c.save(); c.translate(0, -10);
   U.E(c, 0, -24, 22, 6); U.F(c, '#fff', U.OL, 2.5);
@@ -85,12 +85,12 @@ function draw(c, d, W, H, S, t) {
   U.flower(c, 0, -10, 5, '#7fb8d8', '#fff');
   c.globalAlpha = 0.5; c.strokeStyle = '#fff'; c.lineWidth = 3; for (let i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(i * 8, -30); c.quadraticCurveTo(i * 8 + 5, -42 - Math.sin(t * 3 + i) * 4, i * 8, -54); c.stroke(); }
   c.restore(); c.restore();
-  if (S.splash > 0) { c.save(); c.globalAlpha = S.splash; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; U.E(c, mx + Math.cos(a) * 60 * (1.2 - S.splash) * 1.5, my - 140 * s + Math.sin(a) * 40 * (1.2 - S.splash), 6, 8); U.F(c, '#8fbf6a'); } c.restore(); }
+  if (S.splash > 0) { c.save(); c.globalAlpha = S.splash; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; U.E(c, mx + Math.cos(a) * 60 * (1.2 - S.splash) * 1.5, my - 114 * s + Math.sin(a) * 40 * (1.2 - S.splash), 6, 8); U.F(c, '#8fbf6a'); } c.restore(); }
   // 平衡仪
-  const gx = W / 2, gy = H * 0.22, gr = Math.min(W * 0.3, 120);
+  const gr = Math.min(W * 0.3, H * 0.2, 120), gx = W / 2, gy = Math.max(H * 0.22, 104 + gr * 0.4);
   c.save(); c.lineCap = 'round'; c.lineWidth = 14; c.strokeStyle = 'rgba(255,255,255,0.75)'; c.beginPath(); c.arc(gx, gy + gr * 0.6, gr, Math.PI * 1.2, Math.PI * 1.8); c.stroke();
   c.strokeStyle = '#7fb8a8'; c.beginPath(); c.arc(gx, gy + gr * 0.6, gr, Math.PI * 1.5 - 0.22, Math.PI * 1.5 + 0.22); c.stroke();
-  c.strokeStyle = '#e2577e'; c.lineWidth = 6; [Math.PI * 1.2, Math.PI * 1.8].forEach(a => { c.beginPath(); c.arc(gx, gy + gr * 0.6, gr, a, a + (a < 4.8 ? 0.06 : -0.06)); c.stroke(); });
+  c.strokeStyle = '#e2577e'; c.lineWidth = 6; c.beginPath(); c.arc(gx, gy + gr * 0.6, gr, Math.PI * 1.2, Math.PI * 1.26); c.stroke(); c.beginPath(); c.arc(gx, gy + gr * 0.6, gr, Math.PI * 1.74, Math.PI * 1.8); c.stroke();
   const na = Math.PI * 1.5 + Math.max(-0.6, Math.min(0.6, S.th)) / 0.55 * (Math.PI * 0.3);
   c.strokeStyle = U.OL; c.lineWidth = 4; c.beginPath(); c.moveTo(gx, gy + gr * 0.6); c.lineTo(gx + Math.cos(na) * (gr + 10), gy + gr * 0.6 + Math.sin(na) * (gr + 10)); c.stroke();
   U.E(c, gx + Math.cos(na) * (gr + 12), gy + gr * 0.6 + Math.sin(na) * (gr + 12), 9, 9); U.F(c, Math.abs(S.th) > 0.35 ? '#e2577e' : '#f2c24d', U.OL, 2.5);

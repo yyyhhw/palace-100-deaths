@@ -473,8 +473,8 @@ function drawArms(c, sp, o, pose, plump) {
   } else if (pose === 'up') {
     [-1, 1].forEach(s => { c.beginPath(); c.moveTo(s * 24, -146); c.quadraticCurveTo(s * 58, -160, s * 68, -198); c.lineTo(s * 50, -202); c.quadraticCurveTo(s * 42, -172, s * 22, -126); c.closePath(); F(c, col, OL, 3); E(c, s * 61, -208, 8, 8); F(c, sp.skin, OL, 2.5); });
   } else if (pose === 'tray') {
-    sleeve(-1, -30, -116, 20); sleeve(1, 30, -116, 20);
-    hand(-30, -110); hand(30, -110);
+    sleeve(-1, -34, -92, 20); sleeve(1, 34, -92, 20);
+    hand(-34, -86); hand(34, -86);
   }
 }
 function drawModernBody(c, sp, o) {

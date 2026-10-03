@@ -84,7 +84,7 @@ function layout() {
 }
 G.layout = () => LAYOUT;
 const BASE = () => (stage.titleMode && !LAYOUT.land ? H * 0.7 : LAYOUT.base);
-function castScale(n) { const L = LAYOUT, per = L.sw / Math.max(2, n); return Math.min(L.maxH, per / 0.5) / 330; }
+function castScale(n) { const L = LAYOUT, per = L.sw / Math.max(2, n); return Math.min(L.maxH, per / 0.6) / 330; }
 G.charScreen = function (id) { // 角色在屏幕上的头顶位置（给对话气泡的尾巴用）
   const c = stage.cast.find(k => k.id === id); if (!c) return null;
   const s = castScale(stage.cast.length); return { x: c.x * LAYOUT.sw, y: BASE() - 300 * s };
