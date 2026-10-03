@@ -298,3 +298,17 @@ body.land .logo .l2{font-size:min(5.6vw,58px);white-space:nowrap}
 .qwrap{justify-content:center}
 .qmama{width:120px;height:120px}
 @media (max-height:500px){.qwrap{justify-content:flex-start}.qmama{width:84px;height:84px}}
+/* ---------- 第三章小游戏 ---------- */
+#gameOv.dance,#gameOv.cards,#gameOv.spot,#gameOv.escape{touch-action:none;background:linear-gradient(#f6e7c8,#e9cf9c);display:none;flex-direction:column;align-items:center;padding:calc(8px + var(--sat)) 10px calc(10px + var(--sab));gap:8px}
+#gameOv.dance.show,#gameOv.cards.show,#gameOv.spot.show,#gameOv.escape.show{display:flex}
+.dcv,.ccv,.scv,.xcv{width:min(620px,100%);flex:1;min-height:150px;border:3px solid var(--ink);border-radius:14px;display:block;touch-action:none}
+.dbtnz,.xbtnz{width:min(620px,100%);display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.xbtnz{grid-template-columns:1fr 1fr}
+.dbtn,.xbtn{min-height:64px;font-size:16px;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:manipulation}
+.dbtn span{font-size:24px;line-height:1.1}.dbtn.hit{transform:scale(.92);background:var(--gold)}
+body.land .dbtn,body.land .xbtn{min-height:48px}
+.cmsg,.smsg{width:min(620px,100%);background:#fffaf0;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:700;font-size:15px;min-height:1.6em}
+.chand{width:min(620px,100%);display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;min-height:96px}
+.ccard{width:74px;height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;background:#fffaf0;border-color:#2a3a6a;touch-action:manipulation}
+.ccard i{font-style:normal;font-size:18px}.ccard b{font-family:var(--serif);font-size:30px;color:#2a3a6a;line-height:1.1}.ccard small{opacity:.55;font-size:12px}
+.cres{font-weight:900;font-size:16px;padding:6px 10px;border-radius:10px;background:#fff4dc;border:2px solid #c9a87a}.cres.w{color:#2a7a3a}.cres.l{color:#8a1f2b}
+body.land .chand{min-height:72px}body.land .ccard{height:70px;width:60px}body.land .ccard b{font-size:22px}
