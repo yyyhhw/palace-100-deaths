@@ -292,14 +292,14 @@ G.chapterUnlocked = id => id === 'ch1' || !!(G.meta.clear[G.CH_ORDER[G.CH_ORDER.
 G.enterChapter = function (chId) { // 从上一章章末直接进入：带着这一世的属性
   const r = G.run || freshRun();
   G.meta.carry = G.meta.carry || {};
-  G.meta.carry[chId] = { stats: clone(r.stats), flags: clone(r.flags), items: clone(r.items), at: Date.now() };
+  G.meta.carry[chId] = { stats: clone(r.stats), flags: clone(r.flags), items: clone(r.items), cnt: clone(r.cnt || {}), at: Date.now() };
   G.save(); G.startChapter(chId);
 };
 G.startChapter = function (chId) {
   const ch = P.chapters[chId]; if (!ch) return false;
   const carry = G.meta.carry && G.meta.carry[chId];
   const run = freshRun(chId);
-  if (carry) { run.stats = clone(carry.stats); run.flags = clone(carry.flags); run.items = clone(carry.items); }
+  if (carry) { run.stats = clone(carry.stats); run.flags = clone(carry.flags); run.items = clone(carry.items); run.cnt = clone(carry.cnt || {}); }
   else if (ch.defaultRun) ch.defaultRun(run, G);
   G.run = run; AU.stopSpeak && AU.stopSpeak();
   restoreScene({ bg: ch.startBg || 'courtyard', cast: [] }); P.UI.hud(); AU.setMood(ch.startMood || 'day');
