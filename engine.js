@@ -182,7 +182,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 G.sleep = sleep;
 /* ---------- 小游戏失败计数 / 跳过（按完美通过） ---------- */
 const SKIP_AFTER = 3;
-const GAME_NAME = { tea: '奉茶', quiz: '宫规考试', milktea: '奶茶铺', embroider: '绣荷包', gomoku: '御前五子棋', cards: '陪太后打叶子牌', dance: '寿宴献舞', spot: '找不对劲', escape: '夜奔' };
+const GAME_NAME = { tea: '奉茶', quiz: '宫规考试', milktea: '奶茶铺', embroider: '绣荷包', gomoku: '御前五子棋', cards: '陪太后打叶子牌', dance: '寿宴献舞', spot: '找不对劲', escape: '夜奔', sneak: '夜探卷宗库', jianyao: '盯着煎药', anhao: '对暗号' };
 const PERFECT = {
   tea: (G, st) => { const k = st.errKey || 'err'; G.run.cnt[k] = G.cnt(k); return { spills: 0, fail: false, err: G.run.cnt[k] }; }, // 一滴不洒：错误数不增加
   quiz: () => ({ score: 100, pass: true }),
@@ -193,10 +193,13 @@ const PERFECT = {
   dance: (G, st) => ({ ok: true, great: true, hits: st.notes || 24, misses: 0 }),
   spot: () => ({ ok: true }),
   escape: () => ({ ok: true, hits: 0 }),
+  sneak: () => ({ ok: true, hits: 0 }),
+  jianyao: () => ({ ok: true, swaps: 0, slapTao: 0 }),
+  anhao: (G, st) => { const n = st.rounds || 6; return { ok: true, right: n, rounds: n }; },
 };
 G.PERFECT = PERFECT; G.SKIP_AFTER = SKIP_AFTER;
 G.gameKey = st => (G.run.node || '') + ':' + st.game + (st.kind ? ':' + st.kind : '');
-G.gameName = st => (st.gtitle ? String(st.gtitle).split(' · ')[0] : '') || (st.kind === 'incense' ? '验香' : st.kind === 'zongzi' ? '验粽子' : GAME_NAME[st.game] || st.game);
+G.gameName = st => (st.gtitle ? String(st.gtitle).split(' · ')[0] : '') || (st.kind === 'incense' ? '验香' : st.kind === 'zongzi' ? '验粽子' : st.kind === 'dessert' ? '验点心' : GAME_NAME[st.game] || st.game);
 G.gameFails = k => ((G.meta.gameFails || {})[k] || 0);
 const ssleep = ms => sleep(P.UI && P.UI.skip ? Math.min(ms, 40) : ms); // 快进时缩短演出等待
 G.play = async function (node, ip) {
@@ -347,8 +350,8 @@ G.rebirth = function (fromStart) {
 G.resume = function () { if (!G.run || !G.run.node) return false; restoreScene(G.run.scene); P.UI.hud(); AU.setMood(G.run.mood || 'day'); G.play(G.run.node, G.run.ip); return true; };
 G.newGame = function () { G.run = freshRun('ch0'); restoreScene({ bg: 'room', cast: [] }); P.UI.hud(); G.play(P.chapters.ch0.start, 0); };
 /* ---------- 章节衔接 / 章节选择 ---------- */
-G.CH_ORDER = ['ch0', 'ch1', 'ch2', 'ch3'];
-G.CH_NAME = { ch0: '序章', ch1: '第一章', ch2: '第二章', ch3: '第三章' };
+G.CH_ORDER = ['ch0', 'ch1', 'ch2', 'ch3', 'ch4'];
+G.CH_NAME = { ch0: '序章', ch1: '第一章', ch2: '第二章', ch3: '第三章', ch4: '第四章', ch5: '第五章' };
 G.chapterUnlocked = id => id === 'ch1' || !!(G.meta.clear[G.CH_ORDER[G.CH_ORDER.indexOf(id) - 1]]) || !!(G.meta.carry && G.meta.carry[id]);
 G.enterChapter = function (chId) { // 从上一章章末直接进入：带着这一世的属性
   const r = G.run || freshRun();

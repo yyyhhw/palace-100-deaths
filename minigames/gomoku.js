@@ -35,7 +35,7 @@ Q.gomoku = {
   play(G, st) {
     st = st || {};
     return new Promise(res => {
-      const ov = document.querySelector('#gameOv'); ov.className = 'show gomoku'; AU.setMood('quiz');
+      const ov = document.querySelector('#gameOv'); ov.className = 'show gomoku gp'; AU.setMood('quiz');
       ov.innerHTML = `<div class="ghud"><b>♟️ 养心殿 · 五子棋</b><span class="gsc"></span></div><div class="gboard"><canvas class="gcv"></canvas></div>
         <div class="gfoot"><span class="gmsg"></span><button class="btn gcon">🏳️ 让皇上一局</button></div>
         <div class="tintro"><div class="tbox"><h3>♟️ 陪皇上下棋</h3><p>你执<b>黑子</b>先行，横竖斜<b>连成五子</b>就赢。<br>点棋盘落子。一共下三局。</p><p class="terr">（高公公小声提醒：皇上……不太喜欢输。）</p><button class="btn pri tgo">开局</button></div></div>`;

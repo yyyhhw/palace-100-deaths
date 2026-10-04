@@ -13,7 +13,7 @@ Q.embroider = {
   play(G, st) {
     st = st || {};
     return new Promise(res => {
-      const ov = document.querySelector('#gameOv'); ov.className = 'show embroider'; AU.setMood('quiz');
+      const ov = document.querySelector('#gameOv'); ov.className = 'show embroider gp'; AU.setMood('quiz');
       const dur = st.dur || 25, need = st.need || 0.85, tired = !!st.tired;
       ov.innerHTML = `<div class="ghud"><b>🪡 绣荷包</b><span class="esc"></span></div><canvas class="ecv"></canvas>
         <div class="tintro"><div class="tbox"><h3>🪡 给太后绣荷包</h3><p>按住屏幕，<b>沿着虚线</b>从<b>红点</b>开始描，一针一针绣过去。<br>${dur} 秒内绣完 ${Math.round(need * 100)}% 就算成功。</p><p class="terr">${tired ? '（你熬了夜，手有点抖……）' : '（心静，手稳。）'}</p><button class="btn pri tgo">穿针引线</button></div></div>`;

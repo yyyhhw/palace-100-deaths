@@ -8,7 +8,7 @@ Q.escape = {
   play(G, st) {
     st = st || {};
     return new Promise(res => {
-      const ov = document.querySelector('#gameOv'); ov.className = 'show escape'; AU.setMood('danger');
+      const ov = document.querySelector('#gameOv'); ov.className = 'show escape gp'; AU.setMood('danger');
       const dur = st.dur || 16, lives = st.lives || 2, travel = st.travel || 2.2, every = st.every || 1.15;
       ov.innerHTML = `<div class="ghud"><b>🏮 夜逃御花园</b><span class="xsc"></span></div><canvas class="xcv"></canvas>
         <div class="xbtnz"><button class="btn xbtn" data-d="-1">◀ 左躲</button><button class="btn xbtn" data-d="1">右躲 ▶</button></div>

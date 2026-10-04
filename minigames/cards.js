@@ -15,7 +15,7 @@ Q.cards = {
   play(G, st) {
     st = st || {};
     return new Promise(res => {
-      const ov = document.querySelector('#gameOv'); ov.className = 'show cards'; AU.setMood('quiz');
+      const ov = document.querySelector('#gameOv'); ov.className = 'show cards gp'; AU.setMood('quiz');
       const rounds = st.rounds || 5;
       ov.innerHTML = `<div class="ghud"><b>🀄 叶子牌 · 慈宁宫</b><span class="csc"></span></div><canvas class="ccv"></canvas>
         <div class="cmsg"></div><div class="chand"></div>

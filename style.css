@@ -325,3 +325,26 @@ body.land .logo .l2{font-size:min(5.6vw,58px);white-space:nowrap}
 body.land #skipBadge{top:calc(10px + var(--sat))}
 #dlg.readline .txt{color:#5a4a6a}
 .choice .gb.picked{background:#3f9a6a;color:#fff}
+/* ---------- 第四章小游戏 ---------- */
+#gameOv.sneak,#gameOv.jianyao,#gameOv.anhao{touch-action:none;background:linear-gradient(#f6e7c8,#e9cf9c);display:none;flex-direction:column;align-items:center;padding:calc(8px + var(--sat)) 10px calc(10px + var(--sab));gap:8px}
+#gameOv.sneak.show,#gameOv.jianyao.show,#gameOv.anhao.show{display:flex}
+.kcv,.jcv,.acv{width:min(620px,100%);flex:1;min-height:150px;border:3px solid var(--ink);border-radius:14px;display:block;touch-action:none}
+.jmsg,.amsg{width:min(620px,100%);background:#fffaf0;border:3px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:700;font-size:15px;min-height:1.6em}
+.kbtn{width:min(620px,100%);min-height:66px;font-size:18px;font-weight:900;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.kbtn.hit{transform:scale(.97);background:#7ad07a;color:#123}
+.aopts{width:min(620px,100%);display:grid;grid-template-columns:1fr;gap:8px;min-height:120px}
+.abtn{min-height:46px;font-size:16px;font-weight:900;touch-action:manipulation;padding:6px 10px}
+.abtn.good{background:#c9efc0;border-color:#2a7a3a;color:#1a4a22}.abtn.bad{background:#f8c8c8;border-color:#8a1f2b;color:#5a1018}
+@media (max-height:500px){.kbtn{min-height:48px}.abtn{min-height:36px;font-size:14px;padding:3px 8px}.jmsg,.amsg{font-size:13px;padding:3px 8px}.aopts{gap:5px;min-height:0}}
+/* 横屏：小游戏左画布、右操作 */
+body.land #gameOv.gp.show{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,34%);grid-template-rows:auto repeat(8,auto) 1fr;align-items:start;column-gap:12px;row-gap:8px;padding:calc(6px + var(--sat)) calc(10px + var(--sar)) calc(8px + var(--sab)) calc(10px + var(--sal,0px))}
+body.land #gameOv.gp>.ghud{grid-column:1/-1;grid-row:1;width:100%;padding:3px 12px}
+body.land #gameOv.gp>canvas,body.land #gameOv.gp>.gboard{grid-column:1;grid-row:2/-1;width:100%;height:100%;min-height:0;align-self:stretch;contain:size}
+body.land #gameOv.gp>*:not(.ghud):not(canvas):not(.gboard):not(.tintro){grid-column:2;width:100%;min-width:0}
+body.land #gameOv.gp .gcv{width:min(calc(100vh - 70px - var(--sat) - var(--sab)),100%);height:min(calc(100vh - 70px - var(--sat) - var(--sab)),100%)}
+body.land #gameOv.gp .mbtnz{grid-template-columns:repeat(3,1fr)}
+body.land #gameOv.gp .dbtnz{grid-template-columns:1fr}
+body.land #gameOv.gp .dbtn{min-height:52px}
+body.land #gameOv.gp .gfoot{flex-direction:column;align-items:stretch}
+body.land #gameOv.gp .chand{min-height:0}
+body.land #gameOv.gp .kbtn{min-height:120px}

@@ -15,7 +15,7 @@ Q.milktea = {
   play(G, st) {
     st = st || {};
     return new Promise(res => {
-      const ov = document.querySelector('#gameOv'); ov.className = 'show milktea'; AU.setMood('quiz');
+      const ov = document.querySelector('#gameOv'); ov.className = 'show milktea gp'; AU.setMood('quiz');
       ov.innerHTML = `<div class="ghud"><b>🧋 永和宫奶茶铺</b><span class="msc"></span></div><canvas class="mcv"></canvas>
         <div class="mord"></div><div class="mpat"><i></i></div><div class="mbtnz">${ING.map(g => `<button class="btn ming" data-k="${g.k}"><span>${g.e}</span>${g.n}</button>`).join('')}</div>
         <div class="tintro"><div class="tbox"><h3>🧋 开张啦</h3><p>照着订单<b>按顺序</b>加料！加错一样，这杯就废了。<br>客人等久了会走哦。</p><p class="terr">（每杯 ${st.price || 30} 两银子）</p><button class="btn pri tgo">开门迎客</button></div></div>`;

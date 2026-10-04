@@ -9,7 +9,7 @@ Q.dance = {
   play(G, st) {
     st = st || {};
     return new Promise(res => {
-      const ov = document.querySelector('#gameOv'); ov.className = 'show dance'; AU.setMood('happy');
+      const ov = document.querySelector('#gameOv'); ov.className = 'show dance gp'; AU.setMood('happy');
       const total = st.notes || 24, gap = st.gap || 0.8, travel = st.travel || 1.8, win = st.win || 0.25, maxMiss = st.maxMiss || 5;
       ov.innerHTML = `<div class="ghud"><b>💃 寿宴献舞</b><span class="dsc"></span></div><canvas class="dcv"></canvas>
         <div class="dbtnz">${LN.map((l, i) => `<button class="btn dbtn" data-i="${i}"><span>${l.e}</span>${l.n}</button>`).join('')}</div>

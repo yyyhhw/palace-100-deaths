@@ -389,7 +389,7 @@ UI.title = function () {
   const has = G.run && G.run.node;
   ov.querySelector('.tcont').style.display = has ? '' : 'none';
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
-  ov.querySelector('.tinfo').innerHTML = (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (G.meta.clear.ch1 ? ' · 🏅 ' + ['ch1', 'ch2', 'ch3'].filter(k => G.meta.clear[k]).map(k => G.CH_NAME[k]).join('、') + '已通关' : '');
+  ov.querySelector('.tinfo').innerHTML = (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (G.meta.clear.ch1 ? ' · 🏅 ' + G.CH_ORDER.slice(1).filter(k => G.meta.clear[k]).map(k => G.CH_NAME[k]).join('、') + '已通关' : '');
   const tch = ov.querySelector('.tchap'); if (tch) { tch.style.display = G.meta.clear.ch1 ? '' : 'none'; tch.onclick = () => { AU.unlock(); AU.sfx('page'); UI.chapterSelect(); }; }
   ov.querySelector('.tnew').onclick = async () => {
     AU.unlock(); AU.sfx('select');
@@ -427,7 +427,7 @@ UI.chapterEnd = function (chId, st) {
 
 /* ---------- 章节选择 / 关系值 ---------- */
 UI.chapterSelect = async function () {
-  const list = ['ch1', 'ch2', 'ch3'].filter(k => P.chapters[k]);
+  const list = G.CH_ORDER.slice(1).filter(k => P.chapters[k]);
   const html = '<div class="chsel">' + list.map(k => { const ch = P.chapters[k], un = G.chapterUnlocked(k), cl = G.meta.clear[k];
     return `<p><b>${esc(ch.title)}</b>${cl ? ' 🏅' : ''}<br><small>${un ? esc(ch.blurb || '') : '🔒 通关上一章后解锁'}</small></p>`; }).join('') + '</div><p><small>从章节开头开始会覆盖“继续这一世”的进度；图鉴、记忆、名字都会保留。</small></p>';
   const btns = list.filter(k => G.chapterUnlocked(k)).map(k => ({ t: '▶ ' + G.CH_NAME[k], v: k, cls: 'pri' })).concat([{ t: '返回', v: null }]);
