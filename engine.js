@@ -18,7 +18,7 @@ P.registerChapter = function (ch) {
 const STAT_KEYS = ['圣眷', '名声', '健康', '警觉', '疑心', '规矩'];
 const STAT_ICON = { 圣眷: '☀️', 名声: '🌸', 健康: '💊', 警觉: '🔍', 疑心: '👁️', 规矩: '📏' };
 G.STAT_KEYS = STAT_KEYS; G.STAT_ICON = STAT_ICON;
-function freshMeta() { return { v: SAVE_VERSION, names: { modern: '', surname: '', given: '' }, deaths: {}, mems: {}, know: {}, lives: 1, totalDeaths: 0, clear: {}, settings: { music: 0.5, musicOn: true, sfx: 0.8, speech: true, speed: 2 }, created: Date.now() }; }
+function freshMeta() { return { v: SAVE_VERSION, names: { modern: '', surname: '', given: '' }, deaths: {}, mems: {}, know: {}, lives: 1, totalDeaths: 0, clear: {}, endings: {}, settings: { music: 0.5, musicOn: true, sfx: 0.8, speech: true, speed: 2 }, created: Date.now() }; }
 function freshRun(ch) { return { ch: ch || 'ch0', node: null, ip: 0, day: 0, time: '', stats: { 圣眷: 10, 名声: 30, 健康: 80, 警觉: 10, 疑心: 0, 规矩: 30 }, flags: {}, items: {}, cnt: {}, scene: { bg: 'title', cast: [], cat: null }, cp: null, started: Date.now() }; }
 G.meta = freshMeta(); G.run = null;
 function migrate(d) {
@@ -84,6 +84,7 @@ G.mem = k => !!G.meta.mems[k];
 G.know = k => !!G.meta.know[k];
 G.died = id => !!G.meta.deaths[id];
 G.cnt = k => (G.run && G.run.cnt[k]) || 0;
+G.uniqueDeaths = () => Object.keys(G.meta.deaths).filter(k => P.DEATH_MAP[k] && !P.DEATH_MAP[k].extra).length;
 G.fx = function (fx, silent) {
   const out = [];
   Object.keys(fx || {}).forEach(k => { if (!(k in G.run.stats)) return; const v = Math.max(0, Math.min(100, G.run.stats[k] + fx[k])); const d = v - G.run.stats[k]; G.run.stats[k] = v; if (d) out.push([k, d]); });
@@ -185,7 +186,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 G.sleep = sleep;
 /* ---------- 小游戏失败计数 / 跳过（按完美通过） ---------- */
 const SKIP_AFTER = 3;
-const GAME_NAME = { tea: '奉茶', quiz: '宫规考试', milktea: '奶茶铺', embroider: '绣荷包', gomoku: '御前五子棋', cards: '陪太后打叶子牌', dance: '寿宴献舞', spot: '找不对劲', escape: '夜奔', sneak: '夜探卷宗库', jianyao: '盯着煎药', anhao: '对暗号' };
+const GAME_NAME = { tea: '奉茶', quiz: '宫规考试', milktea: '奶茶铺', embroider: '绣荷包', gomoku: '御前五子棋', cards: '陪太后打叶子牌', dance: '寿宴献舞', spot: '找不对劲', escape: '夜奔', sneak: '夜探卷宗库', jianyao: '盯着煎药', anhao: '对暗号', huozai: '火场逃脱', juzheng: '当殿举证', zuoci: '排座次' };
 const PERFECT = {
   tea: (G, st) => { const k = st.errKey || 'err'; G.run.cnt[k] = G.cnt(k); return { spills: 0, fail: false, err: G.run.cnt[k] }; }, // 一滴不洒：错误数不增加
   quiz: () => ({ score: 100, pass: true }),
@@ -199,10 +200,13 @@ const PERFECT = {
   sneak: () => ({ ok: true, hits: 0 }),
   jianyao: () => ({ ok: true, swaps: 0, slapTao: 0 }),
   anhao: (G, st) => { const n = st.rounds || 6; return { ok: true, right: n, rounds: n }; },
+  huozai: (G, st) => ({ ok: true, hits: 0, rescued: !!st.tao }),
+  juzheng: () => ({ ok: true, strikes: 0 }),
+  zuoci: () => ({ ok: true, checks: 1 }),
 };
 G.PERFECT = PERFECT; G.SKIP_AFTER = SKIP_AFTER;
 G.gameKey = st => (G.run.node || '') + ':' + st.game + (st.kind ? ':' + st.kind : '');
-G.gameName = st => (st.gtitle ? String(st.gtitle).split(' · ')[0] : '') || (st.kind === 'incense' ? '验香' : st.kind === 'zongzi' ? '验粽子' : st.kind === 'dessert' ? '验点心' : GAME_NAME[st.game] || st.game);
+G.gameName = st => (st.gtitle ? String(st.gtitle).split(' · ')[0] : '') || (st.kind === 'incense' ? '验香' : st.kind === 'zongzi' ? '验粽子' : st.kind === 'dessert' ? '验点心' : st.kind === 'wine' ? '验酒' : GAME_NAME[st.game] || st.game);
 G.gameFails = k => ((G.meta.gameFails || {})[k] || 0);
 const ssleep = ms => sleep(P.UI && P.UI.skip ? Math.min(ms, 40) : ms); // 快进时缩短演出等待
 G.play = async function (node, ip) {
@@ -292,6 +296,7 @@ async function exec(st, my) {
   }
   if (st.time) { G.run.time = st.time; P.UI.hud(); P.UI.toast('🕯️ ' + st.time, 'info', 1200); return null; }
   if (st.checkpoint) { G.checkpoint(st.checkpoint); return null; }
+  if (st.ending) { P.UI.stopSkip && P.UI.stopSkip(); P.UI.hideDialog(); P.UI.hideChoices(); await P.UI.ending(st.ending, st); return null; }
   if (st.chapterEnd) { P.UI.stopSkip && P.UI.stopSkip(); P.UI.hideDialog(); await P.UI.chapterEnd(st.chapterEnd, st); return null; }
   if (st.title) { await P.UI.chapterCard(st.title, st.sub); return null; }
   if (st.input) { P.UI.stopSkip && P.UI.stopSkip(); await P.UI.nameInput(st.input, st); return null; }
@@ -375,7 +380,7 @@ G.resume = function () { if (!G.run || !G.run.node) return false; restoreScene(G
   G.play(G.run.node, gi != null && gi >= 0 ? gi : G.run.ip); return true; };
 G.newGame = function () { G.run = freshRun('ch0'); restoreScene({ bg: 'room', cast: [] }); P.UI.hud(); G.play(P.chapters.ch0.start, 0); };
 /* ---------- 章节衔接 / 章节选择 ---------- */
-G.CH_ORDER = ['ch0', 'ch1', 'ch2', 'ch3', 'ch4'];
+G.CH_ORDER = ['ch0', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5'];
 G.CH_NAME = { ch0: '序章', ch1: '第一章', ch2: '第二章', ch3: '第三章', ch4: '第四章', ch5: '第五章' };
 G.chapterUnlocked = id => id === 'ch1' || !!(G.meta.clear[G.CH_ORDER[G.CH_ORDER.indexOf(id) - 1]]) || !!(G.meta.carry && G.meta.carry[id]);
 G.enterChapter = function (chId) { // 从上一章章末直接进入：带着这一世的属性

@@ -7,6 +7,7 @@ const Q = P.GAMES = P.GAMES || {};
 const KIND = {
   zongzi: { title: '🔍 哪个粽子不对劲？', item: '粽子', base: '#6fae5a', odd: '#7fa04a', intro: '宁嫔端来一盘粽子，说“随便挑”。<br>仔细看：<b>颜色、气泡、气味</b>，总有一个不一样。' },
   dessert: { title: '🔍 哪碟点心加了料？', item: '点心', base: '#f6e2b0', odd: '#c8c890', intro: '宁嫔的水榭茶会，八碟点心“随便挑”。<br>看<b>颜色、气泡、气味</b>——还有，<b>糯米</b>一直盯着哪一碟。' },
+  wine: { title: '🔍 哪杯酒加了料？', item: '酒', base: '#e8b84a', odd: '#b8c84a', intro: '百日宴上，宁嫔那一桌敬来一排酒。<br>鸳鸯壶倒出来的酒，看<b>颜色、气泡、气味</b>——总有一杯不一样。' },
   incense: { title: '🔍 哪支香被换过？', item: '香', base: '#a8743a', odd: '#9a6a46', intro: '佛堂供桌上摆着一排新香。<br>其中一支被人动过手脚——<b>看颜色、看烟、闻气味</b>。' },
 };
 Q.spot = {
@@ -16,7 +17,7 @@ Q.spot = {
     return new Promise(res => {
       const K = KIND[st.kind || 'zongzi'], n = st.n || 6, dur = st.dur || 15, tries = st.tries || 2;
       const ov = document.querySelector('#gameOv'); ov.className = 'show spot gp'; AU.setMood('mystery');
-      const hint = G.mem && G.mem('M04') ? '🔮 你记得：银针不可靠，要靠眼睛和鼻子。' : '';
+      const hint = st.kind === 'wine' && G.flag && G.flag('wineKnown') ? '🔍 温太医说过：鸳鸯壶倒出来的那一杯，颜色发暗、冒细泡、有股甜腻的怪味。' : G.mem && G.mem('M04') ? '🔮 你记得：银针不可靠，要靠眼睛和鼻子。' : '';
       ov.innerHTML = `<div class="ghud"><b>${K.title}</b><span class="ssc"></span></div><canvas class="scv"></canvas><div class="smsg">${hint || '点一下你觉得有问题的那个。'}</div>
         <div class="tintro"><div class="tbox"><h3>${K.title}</h3><p>${K.intro}</p><p class="terr">${dur} 秒内找出来，最多点错 ${tries - 1} 次。</p><button class="btn pri tgo">仔细看</button></div></div>`;
       const cv = ov.querySelector('.scv'), ctx = cv.getContext('2d');
@@ -56,6 +57,7 @@ Q.spot = {
           U.E(c, x, y + rad * 0.8, rad * 1.2, rad * 0.32); U.F(c, '#fff', '#4a8fd0', 2);
           const col = odd && cues.includes('color') ? K.odd : K.base;
           if ((st.kind || 'zongzi') === 'zongzi') A.zongzi(c, x, y, rad, col);
+          else if (st.kind === 'wine') { A.wineCup(c, x, y, rad * 0.85, col, t); }
           else if (st.kind === 'dessert') { A.dessert(c, x, y, rad * 0.9, i % 4); if (odd && cues.includes('color')) { U.E(c, x, y - rad * 0.2, rad * 0.75, rad * 0.5); U.F(c, 'rgba(110,130,60,0.38)'); }
             if (odd && cues.includes('cat') && (t % 3) < 1.4) { const cx2 = x + rad * 0.95, cy2 = y - rad * 0.95; U.E(c, cx2, cy2, rad * 0.28, rad * 0.24); U.F(c, '#fffaf2', U.OL, 1.5); [-1, 1].forEach(k => { c.beginPath(); c.moveTo(cx2 + k * rad * 0.22, cy2 - rad * 0.1); c.lineTo(cx2 + k * rad * 0.16, cy2 - rad * 0.36); c.lineTo(cx2 + k * rad * 0.04, cy2 - rad * 0.2); c.closePath(); U.F(c, '#fffaf2', U.OL, 1.5); }); c.fillStyle = U.OL; c.font = `bold ${Math.round(rad * 0.3)}px sans-serif`; c.fillText('!', cx2 + rad * 0.4, cy2 - rad * 0.3); } }
           else { U.rr(c, x - rad * 0.5, y + rad * 0.2, rad, rad * 0.5, 6); U.F(c, '#c99a3a', U.OL, 2); c.strokeStyle = col; c.lineWidth = Math.max(3, rad * 0.12); c.beginPath(); c.moveTo(x, y + rad * 0.2); c.lineTo(x, y - rad * 0.8); c.stroke(); E2(c, x, y - rad * 0.85, rad * 0.08, '#ff7a3a');

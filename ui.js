@@ -281,6 +281,12 @@ const MP_LORE = [
   '那丫头当年也不肯喝汤，嘴里还老哼什么“两只老虎，跑得快”……你们那边的人，都这么怪吗？',
   '你身上有那面镜子的味道。上一个有这味道的人，现在住在慈宁宫。',
 ];
+const MP_LORE5 = G => [
+  '百日宴？我这儿也办。来的都是在宴上没吃完就走了的。你那桌留个座儿，我给你温着汤。',
+  '烤鸭的事别问我。我只知道上个月来了一只鸭，非说自己叫“大将军”，排队还插队。',
+  G.flag('houAlly') ? '慈宁宫那丫头当年走的时候说：“下次见！”我说：“别再来了！”……她真没再来。你也别来了，听见没有？' : '镜子合上的那天晚上，记得抬头看看星星。有人在那上头等了四十年。',
+  '火？我这儿不怕火。就是上回有个小丫头一身烟灰过来，把我的汤锅当成了水缸。',
+];
 const MP_LORE4 = G => [
   '冷宫那位种白菜的老太妃？她送过来的客人，我这儿能凑两桌麻将。全是永和宫的。',
   '观星台那老道，三十年前爬上去看星星，摔下来过一回。我劝他喝汤，他说：“贫道夜观天象，今日不宜喝汤。”',
@@ -292,10 +298,11 @@ UI.station = function (d) {
   const td = G.meta.totalDeaths;
   const greet = G.render(MP_GREET[Math.min(MP_GREET.length - 1, td <= 1 ? 0 : 1 + ((td * 7) % (MP_GREET.length - 1)))]);
   let lore = '';
-  const LP = G.run && G.run.ch === 'ch4' ? MP_LORE4(G) : MP_LORE;
+  const LP = G.run && G.run.ch === 'ch5' ? MP_LORE5(G) : G.run && G.run.ch === 'ch4' ? MP_LORE4(G) : MP_LORE;
   if (td >= 3 && td % 2 === 1) lore = LP[((td - 3) / 2 | 0) % LP.length];
   const lines = [greet, G.render(d.roast || ''), '💡 孟婆小提示：' + G.render(d.hint || '多死几次就知道了。')];
   if (lore) lines.push(lore);
+  if (td >= 50 && !G.meta.mems.M24 && P.MEM_MAP.M24) { lines.push('……五十回了？行吧，告诉你个秘密：慈宁宫那位，四十年前也在我这儿死了三百多回。她走的时候还欠我三盆花。你见了她，替我催催。'); setTimeout(() => G.unlockMem('M24'), 900); }
   ov.querySelector('.mpsay').innerHTML = lines.map(l => `<p>${esc(l)}</p>`).join('');
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
   ov.querySelector('.mpstat').innerHTML = `第 <b>${G.meta.lives}</b> 世 · 《百死图鉴》<b>${n}</b>/100 · 记忆碎片 <b>${Object.keys(G.meta.mems).length}</b>/24`;
@@ -327,7 +334,8 @@ let galLoop = null;
 UI.gallery = function (tab) {
   const ov = $('#galleryOv'); tab = tab || 'death';
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
-  ov.querySelector('.gcount').innerHTML = `已收录 <b>${n}</b> / 100　番外 <b>${P.DEATHS.filter(d => d.extra && G.meta.deaths[d.id]).length}</b> / ${P.DEATHS.filter(d => d.extra).length}　记忆 <b>${Object.keys(G.meta.mems).length}</b> / 24`;
+  const ne = Object.keys(G.meta.endings || {}).filter(k => P.ENDING_MAP && P.ENDING_MAP[k] && !P.ENDING_MAP[k].extra).length;
+  ov.querySelector('.gcount').innerHTML = `已收录 <b>${n}</b> / 100　番外 <b>${P.DEATHS.filter(d => d.extra && G.meta.deaths[d.id]).length}</b> / ${P.DEATHS.filter(d => d.extra).length}　记忆 <b>${Object.keys(G.meta.mems).length}</b> / 24` + (P.ENDINGS ? `　结局 <b>${ne}</b> / ${P.ENDINGS.filter(e => !e.extra).length}` : '');
   $$('#galleryOv .tab').forEach(t => { t.classList.toggle('on', t.dataset.tab === tab); t.onclick = () => { AU.sfx('page'); UI.gallery(t.dataset.tab); }; });
   const grid = ov.querySelector('.ggrid'); grid.innerHTML = ''; grid.className = 'ggrid ' + tab;
   if (tab === 'death') {
@@ -337,6 +345,20 @@ UI.gallery = function (tab) {
       cell.dataset.id = d.id;
       cell.innerHTML = `<i>${d.extra ? d.id : d.id}</i><b>${got ? P.DEATH_CATS[d.cat] : (d.playable ? '❔' : '🔒')}</b><span>${got ? esc(d.title) : '？？？'}</span>`;
       cell.onclick = () => { AU.sfx('page'); UI.deathDetail(d); };
+      grid.appendChild(cell);
+    });
+  } else if (tab === 'ending') {
+    (P.ENDINGS || []).forEach(e => {
+      const got = G.meta.endings && G.meta.endings[e.id];
+      const cell = el('button', 'ecell' + (got ? ' got' : ''), `<i>${esc(e.kind)}${e.extra ? ' · 番外' : ''}</i><b>${got ? '【' + esc(e.title) + '】' : '？？？'}</b><small>${got ? esc(G.render(e.line)) : '谜语：' + esc(e.riddle)}</small>`);
+      cell.onclick = () => { AU.sfx('page'); if (got) UI.endingDetail(e); };
+      grid.appendChild(cell);
+    });
+  } else if (tab === 'reward') {
+    (P.REWARDS || []).forEach(r => {
+      const got = n >= r.n;
+      const cell = el('div', 'rcell' + (got ? ' got' : ''), `<i>图鉴 ${r.n}</i><b>${got ? '🎁 ' : '🔒 '}${esc(r.t)}</b><small>${got ? esc(r.d) : '收集 ' + r.n + ' 种死法后解锁（现在 ' + n + '）'}</small>`);
+      if (got && r.n === 100) { const b = el('button', 'btn pri', '📷 看片尾彩蛋'); b.onclick = () => { AU.sfx('page'); UI.egg(); }; cell.appendChild(b); }
       grid.appendChild(cell);
     });
   } else {
@@ -357,6 +379,53 @@ UI.deathDetail = function (d) {
     : `<p class="dt">？？？</p><p><small>${d.playable ? '本版本可解锁 · ' + esc(d.ch) : esc(d.ch) + ' · 后续版本开放'}</small></p><p>${d.playable ? '谜语：' + esc(d.riddle || '多死几次就知道了') : '（这一章还在施工中，孟婆说“急什么，以后有的是机会死”）'}</p>`;
   UI.modal(d.extra ? '番外 ' + d.id : 'No.' + d.id, html);
   if (got) { if (galLoop) galLoop(); const c = $('#modal canvas.mini'); galLoop = loopCanvas(c, (ctx, w, h, t) => { if (!UI.isOpen('#modal')) { galLoop && galLoop(); galLoop = null; return; } A.drawDeathScene(ctx, w, h, d.id, t); }); }
+};
+
+UI.endingDetail = function (e) {
+  const r = G.meta.endings[e.id] || {};
+  UI.modal('【' + esc(e.title) + '】', `<canvas class="mini endmini"></canvas><p><small>${esc(e.kind)} ｜ 首次达成：第 ${r.first || '?'} 世 ｜ 共 ${r.n || 1} 次</small></p><p class="rq">“${esc(G.render(e.line))}”</p>`);
+  if (galLoop) galLoop(); const c = $('#modal canvas.mini'); galLoop = loopCanvas(c, (ctx, w, h, t) => { if (!UI.isOpen('#modal')) { galLoop && galLoop(); galLoop = null; return; } A.drawEnding(ctx, w, h, e.id, t); });
+};
+UI.egg = function () {
+  UI.modal('📷 片尾彩蛋 · 百死不悔', `<canvas class="mini endmini"></canvas><p>奈何桥头。一个扎马尾的姑娘，和一个还没那么老的孟婆，比着剪刀手。</p><p><small>照片背面写着：“2008 · 第 312 回 · 下次见！”——另一行字迹潦草：“别再来了！”</small></p><p><small>🏆 获得称号：<b>百死不悔</b></small></p>`);
+  if (galLoop) galLoop(); const c = $('#modal canvas.mini'); galLoop = loopCanvas(c, (ctx, w, h, t) => { if (!UI.isOpen('#modal')) { galLoop && galLoop(); galLoop = null; return; } A.drawEgg(ctx, w, h, t); });
+};
+let finLoop = null;
+const CREDITS = () => [
+  ['', '《穿越回后宫的100种死法》'], ['主演', '{宫名}（{现代名}）'], ['死亡次数', '{死} 次（一种不少，一次不亏）'],
+  ['贴身宫女', '小桃（爱吃，胆小，最勇敢）'], ['首席情报官', '小安子（已戒赌）'], ['御前侍卫', '陆峥（不喝甜的；少糖可以）'],
+  ['太医', '温太医（和他舅舅不是一家人）'], ['浣衣局分局长', '阿芸'], ['冷宫农业顾问', '静太妃'], ['天气预报', '玄机子（只报雨）'],
+  ['大反派', '宁嫔（影后）'], ['幕后黑手', '温尚书（以及他的两只帽翅）'], ['特别出演', '太后（2008 届）'],
+  ['奈何桥后勤', '孟婆（汤已凉）'], ['道具', '御膳房 · 鸭子“大将军”（已越狱）'], ['白菜指导', '小华、小宁'], ['猫', '糯米（只认小鱼干）'],
+  ['鸣谢', '每一碗没喝下去的孟婆汤'], ['', '本片所有死法均为卡通演出，<br>没有任何一位小主在拍摄中受到真正的伤害。'], ['', '—— 完 ——'],
+];
+UI.ending = function (id, st) {
+  return new Promise(res => {
+    const e = (P.ENDING_MAP && P.ENDING_MAP[id]) || { id, title: id, kind: '', line: '' };
+    const em = G.meta.endings = G.meta.endings || {}; const isNew = !em[id];
+    em[id] = { n: (em[id] ? em[id].n : 0) + 1, first: em[id] ? em[id].first : G.meta.lives, at: Date.now() };
+    if (id !== 'E_dream') G.meta.clear.ch5 = G.meta.clear.ch5 || { at: Date.now(), life: G.meta.lives, rank: G.run && G.run.flags.rank, ending: id };
+    G.save();
+    let ov = $('#finOv'); if (!ov) { ov = el('div', 'ov'); ov.id = 'finOv'; $('#app').appendChild(ov); }
+    const n = G.uniqueDeaths(), ne = Object.keys(em).filter(k => P.ENDING_MAP[k] && !P.ENDING_MAP[k].extra).length;
+    const cred = CREDITS().map(([a, b]) => `<p>${a ? '<b>' + esc(a) + '</b>　' : ''}${G.render(b)}</p>`).join('');
+    ov.innerHTML = `<div class="fcard"><canvas></canvas><div class="fside"><div class="fbody"><div class="fkind">${esc(e.kind)}结局${isNew ? ' · 🆕 首次达成' : ''}</div><div class="ftitle">【${esc(e.title)}】</div>
+      <p class="fline">${esc(G.render(st.line || e.line))}</p>
+      <div class="fstat">第 <b>${G.meta.lives}</b> 世 · 累计死亡 <b>${G.meta.totalDeaths}</b> 次 · 图鉴 <b>${n}</b>/100 · 记忆 <b>${Object.keys(G.meta.mems).length}</b>/24 · 结局 <b>${ne}</b>/${P.ENDINGS.filter(x => !x.extra).length}</div>
+      ${st.cont ? '' : `<div class="fcred"><div class="roll">${cred}</div></div>`}</div>
+      <div class="fbtns">${st.cont ? `<button class="btn pri fcont">${esc(st.cont)}</button>` : `<button class="btn pri fgal">🏁 结局画廊</button><button class="btn freplay">🔁 重玩第五章</button>${n >= 100 ? '<button class="btn fegg">📷 片尾彩蛋</button>' : ''}<button class="btn ftitleb">🏯 回到标题</button>`}</div></div></div>`;
+    if (finLoop) finLoop(); finLoop = loopCanvas(ov.querySelector('canvas'), (c, w, h, t) => A.drawEnding(c, w, h, id, t));
+    show('#finOv'); AU.sfx('fanfare'); AU.setMood(id === 'E_dream' || id === 'E_her' ? 'mystery' : 'happy'); if (id !== 'E_dream' && id !== 'E_her') G.confetti();
+    const close = () => { if (finLoop) { finLoop(); finLoop = null; } hide('#finOv'); };
+    const q = s2 => ov.querySelector(s2);
+    if (st.cont) q('.fcont').onclick = e2 => { e2.stopPropagation(); AU.sfx('select'); close(); res(); };
+    else {
+      q('.fgal').onclick = e2 => { e2.stopPropagation(); AU.sfx('page'); UI.gallery('ending'); };
+      q('.freplay').onclick = e2 => { e2.stopPropagation(); AU.sfx('select'); close(); G.startChapter('ch5'); res(); };
+      q('.ftitleb').onclick = e2 => { e2.stopPropagation(); AU.sfx('tap'); close(); if (G.run) { G.run.node = null; G.save(); } UI.title(); res(); };
+      if (q('.fegg')) q('.fegg').onclick = e2 => { e2.stopPropagation(); UI.egg(); };
+    }
+  });
 };
 
 /* ---------- 菜单 / 设置 ---------- */
@@ -386,7 +455,7 @@ UI.settings = function () {
 /* ---------- 标题 ---------- */
 UI.title = function () {
   G.stop(); document.body.classList.add('nohud');
-  ['#deathOv', '#stationOv', '#galleryOv', '#endOv', '#nameOv'].forEach(hide);
+  ['#deathOv', '#stationOv', '#galleryOv', '#endOv', '#nameOv', '#finOv'].forEach(hide); if (finLoop) { finLoop(); finLoop = null; }
   G.stage.bg = 'title'; G.stage.prevBg = null; G.stage.cat = { pos: 0.86, x: 0.86, mood: 'happy' };
   G.stage.cast = []; G.stage.titleMode = true;
   const land = G.layout().land;
@@ -396,7 +465,8 @@ UI.title = function () {
   const has = G.run && G.run.node;
   ov.querySelector('.tcont').style.display = has ? '' : 'none';
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
-  ov.querySelector('.tinfo').innerHTML = (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (G.meta.clear.ch1 ? ' · 🏅 ' + G.CH_ORDER.slice(1).filter(k => G.meta.clear[k]).map(k => G.CH_NAME[k]).join('、') + '已通关' : '');
+  const nE = Object.keys(G.meta.endings || {}).filter(k => P.ENDING_MAP && P.ENDING_MAP[k] && !P.ENDING_MAP[k].extra).length;
+  ov.querySelector('.tinfo').innerHTML = (n >= 100 ? '🏆 百死不悔 · ' : '') + (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (nE ? ` · 🏁 结局 ${nE}/10` : '') + (G.meta.clear.ch1 ? ' · 🏅 ' + G.CH_ORDER.slice(1).filter(k => G.meta.clear[k]).map(k => G.CH_NAME[k]).join('、') + '已通关' : '');
   const tch = ov.querySelector('.tchap'); if (tch) { tch.style.display = G.meta.clear.ch1 ? '' : 'none'; tch.onclick = () => { AU.unlock(); AU.sfx('page'); UI.chapterSelect(); }; }
   ov.querySelector('.tnew').onclick = async () => {
     AU.unlock(); AU.sfx('select');
@@ -457,6 +527,18 @@ UI.relHelp = function (r) {
     if (r.ch === 'ch2') rows.push(['💰 银两', c.silver || 0, '超过 300 两太招摇。']);
     if (r.ch === 'ch3' && c.ayun) rows.push(['🧺 阿芸', c.ayun, '浣衣局的小宫女，知道各宫衣物的去向。']);
   }
+  if (r.ch === 'ch4' || r.ch === 'ch5') {
+    rows.push(['🍑 小桃信任', c.trust_tao || 0, '≥60 时，她就是你最靠得住的证人。']);
+    rows.push(['🛡️ 陆峥信任', c.trust_lu || 0, '≥60 时，他会站出来替你说话。']);
+    rows.push(['🙏 太后信任', c.trust_hou || 0, r.flags.houAlly ? '老乡相认。她是你的靠山。' : '≥60 之前，别跟她摊牌。']);
+    rows.push(['💊 温太医信任', c.trust_wen || 0, '懂毒的人，信你才肯作证。']);
+    rows.push(['🥬 静太妃信任', c.jing || 0, '冷宫里那位，是三年前的目击者。']);
+    rows.push(['🧺 阿芸好感', c.ayun || 0, '浣衣局知道各宫的衣物——和藏在衣物里的东西。']);
+    rows.push(['🐍 宁嫔杀意', c.ning || 0, '越高，她出手越狠。']);
+    if (r.ch === 'ch5') { rows.push(['👑 皇后杀意', c.hh || 0, '皇后、贵妃、宁嫔的杀意别同时 ≥ 70。']); rows.push(['🔪 贵妃杀意', c.kill || 0, r.flags.sisters ? '姐妹一场，她不会对你下手。' : '排座次时别得罪她。']); }
+    rows.push(['📜 证据卡', Object.keys(r.items).filter(k => k.startsWith('证据卡') && r.items[k] > 0).length, '百日宴举证需要五张：卷宗、账本、布料、翠缕、静太妃。']);
+    if (r.ch === 'ch5') rows.push(['💰 银两', c.silver || 0, (c.silver || 0) < 0 ? '⚠️ 欠着债！五天之内要还上。' : '别借王公公的钱。']);
+  }
   return rows.length ? '<hr>' + rows.map(x => `<p><b>${x[0]} ${x[1]}</b><br><small>${x[2]}</small></p>`).join('') : '';
 };
 
@@ -467,7 +549,7 @@ function somethingVisible() {
   const d = $('#dlg'), ch = $('#choices');
   if (d.classList.contains('show') && !d.classList.contains('choosing') && sayState) return true; // 框还在但没有台词在等 = 假死
   if (ch.classList.contains('show') && ch.children.length) return true;
-  if (['#titleOv', '#dayCard', '#chapterCard', '#modal', '#galleryOv', '#gameOv', '#deathOv', '#stationOv', '#endOv', '#nameOv'].some(vis)) return true;
+  if (['#titleOv', '#dayCard', '#chapterCard', '#modal', '#galleryOv', '#gameOv', '#deathOv', '#stationOv', '#endOv', '#nameOv', '#finOv'].some(vis)) return true;
   const f = $('#fader'); if (f && /\bshow\b/.test(f.className)) return true;
   return false;
 }
