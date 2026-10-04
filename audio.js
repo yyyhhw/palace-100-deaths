@@ -11,6 +11,8 @@ AU.debug = { notes: 0, skipped: 0, ticks: 0, phrases: 0, crossfades: 0, ducks: 0
 
 AU.unlock = function () {
   try {
+    if (document.hidden) return;                    // 后台绝不出声
+    if (AU.bg) { AU.bg = false; if (master && ctx) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.value = 0.9; master.gain.setValueAtTime(0.9, ctx.currentTime); } }
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
       ctx = new AC(); AU.ctx = ctx;
@@ -26,9 +28,14 @@ AU.unlock = function () {
       // iOS：播放一个静音 buffer 解锁
       const sb = ctx.createBufferSource(); sb.buffer = ctx.createBuffer(1, 1, 22050); sb.connect(ctx.destination); sb.start(0);
       AU.applyVol(); AU.ready = true;
-      if (!AU._lis) { AU._lis = true; document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) { ctx.suspend(); AU.stopSpeak(); if (keepEl) keepEl.pause(); } else if (AU.unlockedOnce) { keepAlive(); const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); } });
-      window.addEventListener('pageshow', () => { if (ctx && AU.unlockedOnce && !document.hidden) { keepAlive(); ctx.resume().catch(() => {}); } }); }
-      ctx.onstatechange = () => { if (ctx.state === 'interrupted' && !document.hidden) setTimeout(() => { ctx.resume().catch(() => {}); }, 300); };
+      if (!AU._lis) { AU._lis = true;
+        // 切后台 / 锁屏 / 切换 App：立刻静音、停朗读、挂起 AudioContext、暂停无声 <audio>、把 iOS 音频会话设回 auto；回到前台后等下一次点按（AU.unlock）才恢复
+        document.addEventListener('visibilitychange', () => { if (document.hidden) AU.toBackground(); });
+        window.addEventListener('pagehide', AU.toBackground); window.addEventListener('blur', AU.toBackground); }
+      const cc = ctx; cc.onstatechange = () => {
+        if (cc.state === 'running' && (AU.bg || document.hidden)) { cc.suspend().catch(() => {}); return; }
+        if (cc.state === 'interrupted' && !document.hidden && !AU.bg) setTimeout(() => { if (!AU.bg && !document.hidden && ctx === cc) cc.resume().catch(() => {}); }, 300);
+      };
     }
     AU.unlockedOnce = true;
     keepAlive();
@@ -57,6 +64,15 @@ function keepAlive() {
   } catch (e) {}
 }
 AU.keepAlive = keepAlive;
+AU.bg = false;
+AU.toBackground = function () {
+  AU.bg = true;
+  try { AU.stopSpeak(); } catch (e) {}
+  try { if (keepEl) keepEl.pause(); } catch (e) {}
+  try { if (ctx && master) { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.value = 0; master.gain.setValueAtTime(0, t); } } catch (e) {}
+  try { if (ctx && ctx.state !== 'closed' && ctx.state !== 'suspended') { const r = ctx.suspend(); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
+  try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch (e) {}
+};
 AU.state = () => ctx ? ctx.state : 'none';
 AU.applyVol = function () {
   if (!ctx) return;
@@ -319,7 +335,7 @@ function buildPhrase(tr) {
 }
 function tick() {
   AU.debug.ticks++;
-  if (!ctx || ctx.state !== 'running' || !track || AU.cfg.musicOn === false || AU.cfg.music <= 0) return;
+  if (!ctx || ctx.state !== 'running' || AU.bg || document.hidden || !track || AU.cfg.musicOn === false || AU.cfg.music <= 0) return;
   const now = ctx.currentTime, ahead = now + 0.3;
   if (track.next < now - 0.2) { queue = queue.filter(q => q.t > now); track.next = now + 0.1; } // 从后台回来时跳过积压
   if (track.next - now < 0.6) buildPhrase(track);
@@ -386,7 +402,7 @@ function pickVoice() { try { const vs = speechSynthesis.getVoices() || []; zhVoi
 if ('speechSynthesis' in window) { pickVoice(); try { speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
 AU.speak = function (text) {
   if (P.UI && P.UI.skip) return;
-  if (!AU.cfg.speech || !text) return false;
+  if (!AU.cfg.speech || !text || AU.bg || document.hidden) return false;
   try {
     if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return false;
     speechSynthesis.cancel();
