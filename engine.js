@@ -125,9 +125,10 @@ function drawFrame(ts) {
   const t = stage.t;
   cx.setTransform(DPR, 0, 0, DPR, 0, 0);
   cx.save();
-  if (stage.shake > 0) { stage.shake = Math.max(0, stage.shake - dt * 2.5); cx.translate((Math.random() - 0.5) * 16 * stage.shake, (Math.random() - 0.5) * 12 * stage.shake); }
+  if (stage.shake > 0) { const o = A.FX ? A.FX.shakeOffset(Math.min(1, stage.shake * 1.25), t) : [0, 0]; stage.shake = Math.max(0, stage.shake - dt * 2.2); cx.translate(o[0], o[1]); }
   if (stage.prevBg && stage.bgFade < 1) { A.drawBG(cx, stage.prevBg, W, H, t); cx.globalAlpha = stage.bgFade; stage.bgFade = Math.min(1, stage.bgFade + dt * 2.2); }
   A.drawBG(cx, stage.bg, W, H, t); cx.globalAlpha = 1;
+  if (A.FX) A.FX.ambient(cx, stage.bg, W, H, t, dt, false);
   if (stage.bg === 'rain' || stage.bg === 'roof' || stage.bg === 'kitchen' || stage.bg === 'room_night') { cx.fillStyle = 'rgba(30,20,60,0.12)'; cx.fillRect(0, 0, W, H); }
   // 角色
   const n = stage.cast.length, s = castScale(n);
@@ -154,6 +155,7 @@ function drawFrame(ts) {
     cx.save(); cx.globalAlpha = Math.min(1, p.life * 2); cx.translate(p.x, p.y); cx.rotate(p.r);
     if (p.kind === 'star') A.util.star(cx, 0, 0, p.size, p.col); else if (p.kind === 'petal') { A.util.E(cx, 0, 0, p.size, p.size * 0.6); A.util.F(cx, p.col); } else { cx.fillStyle = p.col; cx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6); }
     cx.restore(); return true; });
+  if (A.FX) { A.FX.ambient(cx, stage.bg, W, H, t, 0, true); A.FX.post(cx, stage.bg, W, H); }
   cx.restore();
   if (stage.flash > 0) { cx.fillStyle = stage.flashCol; cx.globalAlpha = Math.min(1, stage.flash); cx.fillRect(0, 0, W, H); cx.globalAlpha = 1; stage.flash = Math.max(0, stage.flash - dt * 2.5); }
   if (G.onFrame) G.onFrame(dt, t);
