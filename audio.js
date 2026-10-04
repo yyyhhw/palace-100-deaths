@@ -308,14 +308,15 @@ function tick() {
 AU.setMood = function (m, force) {
   if (!m) return; if (AU.mood === m && track && track.mood === m && !force) return;
   AU.mood = m; if (!ctx) return;
-  startTrack(m);
+  try { startTrack(m); } catch (e) { console.warn('music', e); }
 };
 AU.stopMusic = function () { if (track && ctx) { track.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.3); } track = null; queue = []; };
 AU.state = function () { return { ctx: ctx ? ctx.state : 'none', mood: AU.mood, track: track && track.mood, queued: queue.length, voices: voices.length, duck: duckG ? duckG.gain.value : null, music: musicBus ? musicBus.gain.value : null, cfg: Object.assign({}, AU.cfg), debug: Object.assign({}, AU.debug) }; };
 
 /* ---------- 音效 ---------- */
 const STING = { death: [0.3, 1.6], gong: [0.45, 1.6], fanfare: [0.4, 2.2], scream: [0.4, 1], stamp: [0.6, 0.6], burp: [0.5, 1], splash: [0.6, 0.9] };
-AU.sfx = function (name) {
+AU.sfx = function (name) { try { sfx0(name); } catch (e) { /* 音效失败不能影响剧情 */ } };
+function sfx0(name) {
   if (!ctx || ctx.state !== 'running' || AU.cfg.sfx <= 0) return;
   if (P.UI && P.UI.skip) return; // 快进时不放音效/插曲（音乐照常）
   const t = ctx.currentTime + 0.01;
@@ -346,7 +347,7 @@ AU.sfx = function (name) {
     case 'tick': tone('sine', 1500, 1500, t, 0.03, 0.08); break;
     case 'spill': noise(t, 0.4, 0.35, 'lowpass', 1200, 0.8, sfxBus, 300); tone('sine', 700, 300, t, 0.2, 0.12); break;
   }
-};
+}
 
 /* ---------- 朗读 ---------- */
 let zhVoice = null;

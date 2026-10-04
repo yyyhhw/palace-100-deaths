@@ -138,7 +138,7 @@ UI.say = function (who, text, st, my, node, key) {
     const wasRead = G.isRead(node, key);
     if (UI.skip && !wasRead && !skipAll()) { UI.stopSkip(); UI.toast('已到未读剧情', 'info', 1100); }
     d.classList.toggle('readline', wasRead);
-    sayState = { done: false, finish: null, res, my, node, key };
+    sayState = { done: false, finish: null, res, my, node, key, cls: d.className, text, nm };
     const me = sayState;
     const finishType = () => { tx.innerHTML = esc(text).replace(/\n/g, '<br>'); i = chars.length; G.stage.talking = false; d.classList.add('done'); me.done = true; G.markRead(node, key);
       if (UI.skip) setTimeout(() => sayState === me && UI.skip && UI.advance(), 30);
@@ -459,4 +459,37 @@ UI.relHelp = function (r) {
   }
   return rows.length ? '<hr>' + rows.map(x => `<p><b>${x[0]} ${x[1]}</b><br><small>${x[2]}</small></p>`).join('') : '';
 };
+
+/* ---------- 看门狗：剧情在跑、屏幕上却什么都没有（没台词、没选项、没卡片）超过 3 秒时自动自愈 ---------- */
+UI.watch = { idle: 0, fixes: 0 };
+function somethingVisible() {
+  const vis = id => { const e = $(id); return !!(e && e.classList.contains('show')); };
+  const d = $('#dlg'), ch = $('#choices');
+  if (d.classList.contains('show') && !d.classList.contains('choosing') && sayState) return true; // 框还在但没有台词在等 = 假死
+  if (ch.classList.contains('show') && ch.children.length) return true;
+  if (['#titleOv', '#dayCard', '#chapterCard', '#modal', '#galleryOv', '#gameOv', '#deathOv', '#stationOv', '#endOv', '#nameOv'].some(vis)) return true;
+  const f = $('#fader'); if (f && /\bshow\b/.test(f.className)) return true;
+  return false;
+}
+UI.recover = function (why) {
+  const r = G.run; if (!r || !r.node) return false;
+  UI.watch.fixes++; G.diag && G.diag('watchdog', why || '');
+  const d = $('#dlg');
+  if (sayState && G.alive(sayState.my)) { // 台词还在等，只是框没了：把它重新显示出来
+    d.className = (sayState.cls || 'show narr').replace(/\bchoosing\b/g, '') + ' done'; if (!/\bshow\b/.test(d.className)) d.className += ' show';
+    d.querySelector('.txt').innerHTML = esc(sayState.text || '').replace(/\n/g, '<br>'); const tag = d.querySelector('.nameTag'); tag.textContent = sayState.nm || ''; tag.style.display = sayState.nm ? '' : 'none';
+    sayState.done = true; return 'say';
+  }
+  const ch = $('#choices');
+  if (ch.children.length && !ch.classList.contains('show')) { ch.classList.add('show'); d.classList.add('choosing'); return 'choices'; }
+  const steps = P.NODES[r.node] || [];
+  if (G.loopAlive()) { G.play(r.node, Math.max(0, r.ip - 1)); return 'replay'; } // 卡在一个看不见的等待上：从当前这一步重来
+  G.play(r.node, Math.min(r.ip, steps.length)); return 'resume'; // 剧情循环意外停了：接着往下走（走到头/节点没了时 G.play 会回到当天清晨）
+};
+setInterval(() => {
+  const r = G.run, w = UI.watch;
+  if (!r || !r.node || document.hidden || somethingVisible()) { w.idle = 0; return; }
+  w.idle += 0.5;
+  if (w.idle >= 3) { w.idle = 0; const k = UI.recover('idle'); if (k) console.warn('watchdog recovered:', k, r.node, r.ip); }
+}, 500);
 })(window.PALACE = window.PALACE || {});

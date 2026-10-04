@@ -116,6 +116,10 @@ G.charScreen = function (id) { // 角色在屏幕上的头顶位置（给对话�
   const s = castScale(stage.cast.length); return { x: c.x * LAYOUT.sw, y: BASE() - 300 * s };
 };
 function frame(ts) {
+  try { drawFrame(ts); } catch (e) { if (!frame.errN) console.error('frame', e); frame.errN = (frame.errN || 0) + 1; try { cx.restore(); } catch (e2) {} }
+  requestAnimationFrame(frame);
+}
+function drawFrame(ts) {
   const now = ts / 1000, dt = Math.min(0.05, now - (frame.last || now)); frame.last = now; stage.t += dt;
   const t = stage.t;
   cx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -152,7 +156,6 @@ function frame(ts) {
   cx.restore();
   if (stage.flash > 0) { cx.fillStyle = stage.flashCol; cx.globalAlpha = Math.min(1, stage.flash); cx.fillRect(0, 0, W, H); cx.globalAlpha = 1; stage.flash = Math.max(0, stage.flash - dt * 2.5); }
   if (G.onFrame) G.onFrame(dt, t);
-  requestAnimationFrame(frame);
 }
 G.burst = function (kind, x, y, n, cols) { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 120 + Math.random() * 260; stage.particles.push({ kind, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 160, g: 420, r: Math.random() * 6, vr: (Math.random() - 0.5) * 10, life: 1 + Math.random() * 0.8, size: 5 + Math.random() * 6, col: cols[i % cols.length] }); } };
 G.confetti = () => G.burst('rect', W / 2, H * 0.35, 80, ['#e2577e', '#f2c24d', '#7fb8a8', '#b9a7d6', '#fff']);
@@ -207,17 +210,37 @@ G.play = async function (node, ip) {
   try {
     while (my === gen) {
       const steps = P.NODES[G.run.node];
-      if (!steps) { console.error('missing node', G.run.node); return; }
-      if (G.run.ip >= steps.length) return;
+      if (!steps || G.run.ip >= steps.length) { // 存档来自旧版本（节点改过/删掉了）或剧情意外走到头：回到当天清晨，而不是卡住
+        console.warn(steps ? 'node ran off end' : 'missing node', G.run.node, G.run.ip); G.diag('fellOff', G.run.node + ':' + G.run.ip);
+        fallbackRun(); return;
+      }
       const st = steps[G.run.ip]; G.run.ip++;
       if (G.run.postGame) G.run.postGame.n++;
-      const r = await exec(st, my);
+      G.playGen = my; G.stepT = Date.now();
+      let r = null;
+      try { r = await exec(st, my); }
+      catch (e) { if (e && e.__death) throw e; console.error('step failed', G.run.node, G.run.ip - 1, e); G.diag && G.diag('stepErr', String(e && e.message || e)); r = null; }
       if (my !== gen) return;
       if (r && r.go) { G.run.node = r.go; G.run.ip = 0; }
       G.run.scene = sceneSnapshot();
       G.save();
     }
   } catch (e) { if (e && e.__death) return; console.error(e); }
+  finally { if (G.playGen === my) G.playGen = null; }
+};
+function fallbackRun() {
+  const now = Date.now(), recent = G._fbAt && now - G._fbAt < 4000; G._fbAt = now;
+  setTimeout(() => {
+    const cp = G.run && G.run.cp;
+    if (cp && !recent && P.NODES[cp.node] && cp.ip < P.NODES[cp.node].length) { P.UI.toast('🕯️ 读档出了点岔子，回到「' + (G.run.cpLabel || '当天清晨') + '」', 'info', 2400); G.rebirth(false); }
+    else if (G.run && P.chapters[G.run.ch] && G.run.ch !== 'ch0' && G.run.ch !== 'ch1' && !(recent && G._fbCh)) { G._fbCh = true; P.UI.toast('🕯️ 读档出了点岔子，从本章开头继续', 'info', 2400); G.startChapter(G.run.ch); }
+    else { G._fbCh = false; P.UI.title(); }
+  }, 0);
+}
+G.loopAlive = () => G.playGen != null && G.playGen === gen;
+/* 诊断：最近几次自愈记录（localStorage palace100_diag），方便以后排查“卡住” */
+G.diag = function (kind, info) {
+  try { const k = 'palace100_diag', a = JSON.parse(localStorage.getItem(k) || '[]'); a.push({ k: kind, i: info, n: G.run && G.run.node, ip: G.run && G.run.ip, at: Date.now() }); localStorage.setItem(k, JSON.stringify(a.slice(-12))); } catch (e) {}
 };
 G.stop = () => { gen++; P.UI.hideDialog(); P.UI.hideChoices(); };
 G.alive = my => my === gen;
@@ -226,7 +249,7 @@ async function exec(st, my) {
   if (typeof st === 'function') { const r = st(G); return r && r.then ? await r : r; }
   if (st.if !== undefined) {
     const ok = typeof st.if === 'function' ? st.if(G) : !!st.if;
-    if (ok) { if (st.then) { const r = await execList(st.then, my); if (r) return r; if (st.go) return { go: st.go }; if (st.death) return G.death(st.death); return null; } if (st.go) return { go: st.go }; if (st.death) return G.death(st.death); }
+    if (ok) { if (st.then) { const r = await execList(st.then, my); if (my !== gen) return null; if (r) return r; if (st.go) return { go: st.go }; if (st.death) return G.death(st.death); return null; } if (st.go) return { go: st.go }; if (st.death) return G.death(st.death); }
     else { if (st.else && Array.isArray(st.else)) return execList(st.else, my); if (st.else) return { go: st.else }; }
     return null;
   }
