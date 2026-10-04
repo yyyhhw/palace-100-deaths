@@ -92,14 +92,21 @@ body.land #toasts{top:calc(54px + var(--sat))}
 .cc .cs{margin-top:10px;font-size:16px;opacity:.9}
 
 /* ---------- 弹窗 ---------- */
-#modal{z-index:50;align-items:center;justify-content:center;background:rgba(30,16,20,.55);padding:16px}
-.mcard{width:min(440px,100%);max-height:88%;overflow:auto;background:linear-gradient(#fffaf0,#f6e7c8);border:4px solid var(--ink);border-radius:20px;padding:18px;box-shadow:0 8px 0 rgba(0,0,0,.25);animation:pop .25s}
-.mtitle{font-family:var(--serif);font-size:20px;font-weight:900;color:var(--red2);margin-bottom:6px}
+#modal{z-index:50;align-items:center;justify-content:center;background:rgba(30,16,20,.55);padding:calc(10px + var(--sat)) calc(12px + var(--sar)) calc(10px + var(--sab)) calc(12px + var(--sal))}
+body.land .mcard{padding:12px 16px}
+.mcard{position:relative;display:flex;flex-direction:column;width:min(440px,100%);max-height:100%;overflow:hidden;background:linear-gradient(#fffaf0,#f6e7c8);border:4px solid var(--ink);border-radius:20px;padding:18px;box-shadow:0 8px 0 rgba(0,0,0,.25);animation:pop .25s}
+.mtitle{flex:none;font-family:var(--serif);font-size:20px;font-weight:900;color:var(--red2);margin-bottom:6px;padding-right:40px}
+.mbody{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;margin-right:-6px;padding-right:6px}
+.mx{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:50%;border:3px solid var(--ink);background:#fff6e0;color:var(--ink);font-size:20px;font-weight:900;line-height:1;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation}
+.mx:active{transform:scale(.92)}
+.dgame{margin-top:6px;font-size:13px;background:#fff3d6;border:2px dashed #c08a5a;border-radius:10px;padding:5px 8px}
+.mcard.gskip .mbtns{flex-direction:column}
+.mcard.gskip .mbtns .btn{flex:none;width:100%}
 .mbody p{margin:6px 0;line-height:1.55}
 .mbody canvas.mini{width:100%;height:160px;border-radius:12px;border:3px solid var(--ink);background:#fff}
 .mbody .dt{font-family:var(--serif);font-size:20px;font-weight:900;color:var(--red2)}
 .mbody .rq{background:#fff;border:2px dashed #c08a5a;border-radius:10px;padding:6px 10px}
-.mbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:12px}
+.mbtns{flex:none;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:12px}
 .mbtns .btn{flex:1 1 40%}
 .set label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;font-weight:700;font-size:15px}
 .set input[type=range]{width:45%} .set input[type=checkbox]{width:24px;height:24px} .set select{font-size:15px;padding:4px}

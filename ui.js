@@ -18,7 +18,7 @@ UI.init = function () {
   document.addEventListener('keydown', first, { capture: true }); document.addEventListener('touchend', first, { capture: true });
   $('#tapLayer').addEventListener('click', () => UI.advance());
   $('#dlg').addEventListener('click', () => UI.advance());
-  document.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !document.activeElement.matches('input')) { if (!$('#choices').children.length) UI.advance(); } });
+  document.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !document.activeElement.matches('input') && !popupOpen()) { if (!$('#choices').children.length) UI.advance(); } });
   $('#btnMenu').onclick = e => { e.stopPropagation(); AU.sfx('tap'); UI.menu(); };
   $('#btnSkip').onclick = e => { e.stopPropagation(); if (UI.skip) UI.stopSkip(); else { AU.sfx('tap'); UI.startSkip(false); } };
   $('#btnAuto').onclick = e => { e.stopPropagation(); AU.sfx('tap'); UI.setAuto(!UI.auto); };
@@ -52,14 +52,31 @@ UI.toast = function (msg, kind, ms) {
   const t = el('div', 'toast ' + (kind || ''), esc(msg)); $('#toasts').appendChild(t);
   setTimeout(() => t.classList.add('out'), ms || 1700); setTimeout(() => t.remove(), (ms || 1700) + 500);
 };
-UI.modal = function (title, html, buttons) {
+let modalDone = null;
+UI.modal = function (title, html, buttons, opt) {
+  if (modalDone) modalDone(); // 旧弹窗被新弹窗顶掉时，按“取消”结算，避免挂起
   return new Promise(res => {
-    const m = $('#modal'); m.querySelector('.mtitle').innerHTML = title; m.querySelector('.mbody').innerHTML = html;
+    const m = $('#modal'); const card = m.querySelector('.mcard'); card.className = 'mcard ' + ((opt && opt.cls) || '');
+    m.querySelector('.mtitle').innerHTML = title; const body = m.querySelector('.mbody'); body.innerHTML = html; body.scrollTop = 0;
     const bar = m.querySelector('.mbtns'); bar.innerHTML = '';
-    (buttons || [{ t: '知道了' }]).forEach(b => { const btn = el('button', 'btn ' + (b.cls || ''), b.t); btn.onclick = () => { AU.sfx('tap'); hide('#modal'); res(b.v); }; bar.appendChild(btn); });
+    const list = buttons || [{ t: '知道了' }];
+    const cancel = list.find(b => b.v === null || b.v === false || b.v === undefined); const dv = cancel ? cancel.v : undefined;
+    let done = false;
+    const finish = v => { if (done) return; done = true; if (modalDone === fin0) modalDone = null; hide('#modal'); res(v); };
+    const fin0 = () => finish(dv); modalDone = fin0;
+    list.forEach(b => { const btn = el('button', 'btn ' + (b.cls || ''), b.t); btn.onclick = e => { e.stopPropagation(); AU.sfx('tap'); finish(b.v); }; bar.appendChild(btn); });
+    m.querySelector('.mx').onclick = e => { e.stopPropagation(); AU.sfx('tap'); finish(dv); };
+    m.onclick = e => { if (e.target === m) { AU.sfx('tap'); finish(dv); } };
+    UI.stopSkip && UI.stopSkip();
     show('#modal');
   });
 };
+UI.closeModal = () => { if (modalDone) modalDone(); else hide('#modal'); };
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (UI.isOpen('#modal')) { e.preventDefault(); AU.sfx('tap'); UI.closeModal(); }
+  else if (UI.isOpen('#galleryOv')) { e.preventDefault(); AU.sfx('tap'); hide('#galleryOv'); }
+});
 
 /* ---------- 过场 ---------- */
 UI.transition = async function (kind, mid) {
@@ -91,13 +108,15 @@ UI.skip = false; UI.skipHold = false; UI.auto = false;
 const skipAll = () => G.meta.settings.skipAll === true;
 const skipBadge = () => { const b = $('#skipBadge'); if (!b) return; b.textContent = UI.skip ? (skipAll() ? '⏩ 快进中（全部）' : '⏩ 快进中') : UI.auto ? '▶ 自动播放' : ''; b.classList.toggle('show', UI.skip || UI.auto); document.body.classList.toggle('skipping', UI.skip); };
 UI.startSkip = function (hold) {
-  if (UI.skip) return; UI.skip = true; UI.skipHold = !!hold; $('#btnSkip').classList.add('on'); skipBadge();
+  if (UI.skip || popupOpen()) return; UI.skip = true; UI.skipHold = !!hold; $('#btnSkip').classList.add('on'); skipBadge();
   if (sayState && sayState.done) setTimeout(() => UI.skip && sayState && sayState.done && UI.advance(), 30);
   else if (sayState && (skipAll() || G.isRead(sayState.node, sayState.key))) sayState.finish();
   else if (sayState) { UI.stopSkip(); UI.toast('已到未读剧情', 'info', 1100); }
 };
 UI.stopSkip = function () { if (!UI.skip) return; UI.skip = false; UI.skipHold = false; $('#btnSkip').classList.remove('on'); skipBadge(); };
-UI.setAuto = function (on) { UI.auto = !!on; $('#btnAuto').classList.toggle('on', UI.auto); skipBadge(); if (UI.auto && sayState && sayState.done) sayState.autoT = setTimeout(() => UI.auto && sayState && sayState.done && UI.advance(), 900); };
+const popupOpen = () => UI.isOpen('#modal') || UI.isOpen('#galleryOv');
+const autoAdv = me => { if (!me || sayState !== me || !UI.auto || UI.skip || !me.done) return; if (popupOpen()) { me.autoT = setTimeout(() => autoAdv(me), 400); return; } UI.advance(); };
+UI.setAuto = function (on) { UI.auto = !!on; $('#btnAuto').classList.toggle('on', UI.auto); skipBadge(); if (UI.auto && sayState && sayState.done) { const me = sayState; me.autoT = setTimeout(() => autoAdv(me), 900); } };
 UI.isSkipping = () => UI.skip;
 function speakerName(who, st) {
   if (st && st.name) return G.render(st.name);
@@ -123,7 +142,7 @@ UI.say = function (who, text, st, my, node, key) {
     const me = sayState;
     const finishType = () => { tx.innerHTML = esc(text).replace(/\n/g, '<br>'); i = chars.length; G.stage.talking = false; d.classList.add('done'); me.done = true; G.markRead(node, key);
       if (UI.skip) setTimeout(() => sayState === me && UI.skip && UI.advance(), 30);
-      else if (UI.auto) me.autoT = setTimeout(() => sayState === me && UI.auto && !UI.skip && UI.advance(), 1100 + chars.length * 55); };
+      else if (UI.auto) me.autoT = setTimeout(() => autoAdv(me), 1100 + chars.length * 55); };
     sayState.finish = finishType;
     if (!speed || UI.skip) { finishType(); return; }
     const tick = () => { if (!sayState || sayState.res !== res) return; if (i >= chars.length) { finishType(); return; } i += 1; tx.innerHTML = esc(chars.slice(0, i).join('')).replace(/\n/g, '<br>'); if (i % 3 === 0) AU.sfx('tick'); setTimeout(tick, speed); };
@@ -225,7 +244,7 @@ function loopCanvas(canvas, draw) {
   requestAnimationFrame(f); return () => { alive = false; };
 }
 UI.deathNo = d => d.extra ? '番外 · ' + d.id : d.id;
-UI.deathCard = function (d, isNew, mem) {
+UI.deathCard = function (d, isNew, mem, gf) {
   return new Promise(res => {
     const ov = $('#deathOv'); $('#stage').classList.add('gray');
     ov.querySelector('.dno').textContent = d.extra ? `番外第 ${+d.id.slice(1)} 种死法` : `第 ${+d.id} 种死法`;
@@ -234,6 +253,8 @@ UI.deathCard = function (d, isNew, mem) {
     ov.querySelector('.ddesc').textContent = G.render(d.desc.replace(/【姓】/g, '{姓}').replace(/【玩家名】/g, '{现代名}'));
     ov.querySelector('.droast').textContent = G.render(d.roast || '');
     const mm = ov.querySelector('.dmem'); const mi = mem && P.MEM_MAP[mem]; mm.innerHTML = mi ? `🔮 获得记忆碎片：<b>${esc(mi.title)}</b>` : ''; mm.style.display = mi ? '' : 'none';
+    let dg = ov.querySelector('.dgame'); if (!dg) { dg = el('div', 'dgame'); mm.after(dg); }
+    dg.innerHTML = gf ? (gf.n >= G.SKIP_AFTER ? `🎮「${esc(gf.name)}」已失败 <b>${gf.n}</b> 次，可以跳过——再玩到它时可选「⏭ 跳过小游戏（按完美通过）」` : `🎮「${esc(gf.name)}」已失败 <b>${gf.n}</b> 次（失败 ${G.SKIP_AFTER} 次后可跳过）`) : ''; dg.style.display = gf ? '' : 'none';
     ov.querySelector('.dnew').style.display = isNew ? '' : 'none';
     const stamp = ov.querySelector('.dstamp'); stamp.classList.remove('slam');
     ov.classList.remove('open');
@@ -319,6 +340,7 @@ UI.gallery = function (tab) {
     });
   }
   ov.querySelector('.gclose').onclick = () => { AU.sfx('tap'); hide('#galleryOv'); };
+  ov.onclick = e => { if (e.target === ov) { AU.sfx('tap'); hide('#galleryOv'); } };
   show('#galleryOv');
 };
 UI.deathDetail = function (d) {
@@ -351,7 +373,7 @@ UI.settings = function () {
   const upd = () => { s.musicOn = $('#sMusOn').checked; s.music = +$('#sMus').value; s.sfx = +$('#sSfx').value; s.speech = $('#sSp').checked; s.sixth = $('#sSix').checked; s.speed = +$('#sSpd').value; s.skipAll = $('#sSkip').value === '1'; skipBadge(); Object.assign(AU.cfg, s); AU.applyVol(); if (!s.speech) AU.stopSpeak(); G.save(); };
   ['#sMus', '#sSfx', '#sSp', '#sSix', '#sSpd'].forEach(id => $(id).addEventListener('input', upd));
   ['#sMusOn', '#sSp', '#sSix', '#sSpd', '#sSkip'].forEach(id => $(id).addEventListener('change', upd));
-  let armed = false; $('#sWipe').onclick = () => { if (!armed) { armed = true; $('#sWipe').textContent = '⚠️ 再点一次确认清除（不可恢复）'; return; } G.wipe(); hide('#modal'); G.stop(); UI.title(); UI.toast('存档已清除', 'info'); };
+  let armed = false; $('#sWipe').onclick = () => { if (!armed) { armed = true; $('#sWipe').textContent = '⚠️ 再点一次确认清除（不可恢复）'; return; } G.wipe(); UI.closeModal(); G.stop(); UI.title(); UI.toast('存档已清除', 'info'); };
 };
 
 /* ---------- 标题 ---------- */

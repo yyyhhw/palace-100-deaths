@@ -180,6 +180,24 @@ let gen = 0;
 G.busy = false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 G.sleep = sleep;
+/* ---------- 小游戏失败计数 / 跳过（按完美通过） ---------- */
+const SKIP_AFTER = 3;
+const GAME_NAME = { tea: '奉茶', quiz: '宫规考试', milktea: '奶茶铺', embroider: '绣荷包', gomoku: '御前五子棋', cards: '陪太后打叶子牌', dance: '寿宴献舞', spot: '找不对劲', escape: '夜奔' };
+const PERFECT = {
+  tea: (G, st) => { const k = st.errKey || 'err'; G.run.cnt[k] = G.cnt(k); return { spills: 0, fail: false, err: G.run.cnt[k] }; }, // 一滴不洒：错误数不增加
+  quiz: () => ({ score: 100, pass: true }),
+  milktea: (G, st) => { const n = st.customers || 4; return { served: n, earned: n * (st.price || 30), ruined: 0 }; },
+  embroider: () => ({ ok: true, prog: 1 }),
+  gomoku: (G, st) => { const n = st.games || 3; return { wins: 1, losses: n - 1, results: [1].concat(new Array(n - 1).fill(2)), sweep: false }; }, // 有输有赢：皇上最高兴
+  cards: (G, st) => { const n = st.rounds || 5; return { wins: n - 1, losses: 1, sweep: false, happy: true }; }, // 有来有回：太后最高兴，不全胜
+  dance: (G, st) => ({ ok: true, great: true, hits: st.notes || 24, misses: 0 }),
+  spot: () => ({ ok: true }),
+  escape: () => ({ ok: true, hits: 0 }),
+};
+G.PERFECT = PERFECT; G.SKIP_AFTER = SKIP_AFTER;
+G.gameKey = st => (G.run.node || '') + ':' + st.game + (st.kind ? ':' + st.kind : '');
+G.gameName = st => (st.gtitle ? String(st.gtitle).split(' · ')[0] : '') || (st.kind === 'incense' ? '验香' : st.kind === 'zongzi' ? '验粽子' : GAME_NAME[st.game] || st.game);
+G.gameFails = k => ((G.meta.gameFails || {})[k] || 0);
 const ssleep = ms => sleep(P.UI && P.UI.skip ? Math.min(ms, 40) : ms); // 快进时缩短演出等待
 G.play = async function (node, ip) {
   const my = ++gen; stage.titleMode = false; P.UI.hud(); G.run.node = node; G.run.ip = ip || 0; G.save();
@@ -189,6 +207,7 @@ G.play = async function (node, ip) {
       if (!steps) { console.error('missing node', G.run.node); return; }
       if (G.run.ip >= steps.length) return;
       const st = steps[G.run.ip]; G.run.ip++;
+      if (G.run.postGame) G.run.postGame.n++;
       const r = await exec(st, my);
       if (my !== gen) return;
       if (r && r.go) { G.run.node = r.go; G.run.ip = 0; }
@@ -250,7 +269,19 @@ async function exec(st, my) {
   if (st.chapterEnd) { P.UI.stopSkip && P.UI.stopSkip(); P.UI.hideDialog(); await P.UI.chapterEnd(st.chapterEnd, st); return null; }
   if (st.title) { await P.UI.chapterCard(st.title, st.sub); return null; }
   if (st.input) { P.UI.stopSkip && P.UI.stopSkip(); await P.UI.nameInput(st.input, st); return null; }
-  if (st.game) { P.UI.stopSkip && P.UI.stopSkip(); const pm = G.run.mood || AU.mood; const res = await P.GAMES[st.game].play(G, st); if (pm) AU.setMood(pm); if (my !== gen) return null; G.run.flags['game_' + st.game] = res; if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null; }
+  if (st.game) {
+    P.UI.stopSkip && P.UI.stopSkip(); G.run.postGame = null;
+    const gk = G.gameKey(st), fails = G.gameFails(gk); let res = null;
+    if (fails >= SKIP_AFTER && PERFECT[st.game]) {
+      const v = await P.UI.modal('🎮 ' + G.gameName(st), `<p>这个小游戏已失败 <b>${fails}</b> 次，可以跳过。</p><p><small>跳过＝按完美通过：奖励、属性、剧情和完美通关完全一样；已解锁的死法照样保留。</small></p>`,
+        [{ t: '⏭ 跳过小游戏（按完美通过）', v: 'skip', cls: 'pri gskipb' }, { t: '▶ 再挑战一次', v: 'play', cls: 'retry' }], { cls: 'gskip' });
+      if (my !== gen) return null;
+      if (v === 'skip') { res = PERFECT[st.game](G, st); res.skipped = true; P.UI.toast('⏭ 已跳过：按完美通过', 'good', 1600); }
+    }
+    if (!res) { const pm = G.run.mood || AU.mood; res = await P.GAMES[st.game].play(G, st); if (pm) AU.setMood(pm); if (my !== gen) return null; }
+    G.run.flags['game_' + st.game] = res; G.run.postGame = { k: gk, n: 0, name: G.gameName(st) };
+    if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null;
+  }
   if (st.death) return G.death(st.death, st);
   if (st.go) return { go: st.go };
   if (st.hud !== undefined) { document.body.classList.toggle('nohud', !st.hud); return null; }
@@ -258,7 +289,7 @@ async function exec(st, my) {
 }
 function restoreXs() { stage.cast.forEach(c => { c.x = null; }); }
 async function applyChoice(o, my) {
-  AU.sfx('select'); if (G.run && G.run.node) G.markPicked(G.run.node, o);
+  AU.sfx('select'); if (G.run && G.run.node) G.markPicked(G.run.node, o); if (G.run) G.run.postGame = null;
   if (o.inc) G.run.cnt[o.inc] = (G.run.cnt[o.inc] || 0) + 1;
   if (o.set) Object.assign(G.run.flags, o.set);
   if (o.fx) G.fx(o.fx);
@@ -282,6 +313,9 @@ G.death = async function (id, st) {
   G.meta.deaths[id] = { n: (rec ? rec.n : 0) + 1, first: rec ? rec.first : G.meta.lives, at: Date.now() };
   G.meta.totalDeaths++; G.meta.lives++;
   const mem = P.DEATH_MEM[id]; let gotMem = null; if (mem && !G.meta.mems[mem]) { G.meta.mems[mem] = { at: Date.now(), life: G.meta.lives - 1 }; gotMem = mem; }
+  // 小游戏后紧接着（中间没做过选择）死掉 → 记为这个小游戏失败一次
+  let gameFail = null; const pg = G.run.postGame; G.run.postGame = null;
+  if (pg && pg.n <= 30) { const gf = G.meta.gameFails = G.meta.gameFails || {}; gf[pg.k] = (gf[pg.k] || 0) + 1; gameFail = { k: pg.k, n: gf[pg.k], name: pg.name }; }
   G.run.lastDeath = id; G.save();
   // 舞台演出：变成小幽灵飘走
   AU.sfx('death');
@@ -291,7 +325,7 @@ G.death = async function (id, st) {
   stage.shake = 0.8; stage.flash = 0.6; stage.flashCol = '#fff';
   await sleep(1000);
   if (my !== gen) return { dead: true };
-  await P.UI.deathCard(d, isNew, gotMem);
+  await P.UI.deathCard(d, isNew, gotMem, gameFail);
   if (my !== gen) return { dead: true };
   const cont = P.DEATH_CONT[id];
   if (cont) { G.play(cont, 0); return { dead: true }; }
