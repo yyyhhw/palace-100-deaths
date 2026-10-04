@@ -26,14 +26,38 @@ AU.unlock = function () {
       // iOS：播放一个静音 buffer 解锁
       const sb = ctx.createBufferSource(); sb.buffer = ctx.createBuffer(1, 1, 22050); sb.connect(ctx.destination); sb.start(0);
       AU.applyVol(); AU.ready = true;
-      document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) { ctx.suspend(); AU.stopSpeak(); } else if (AU.unlockedOnce) ctx.resume(); });
+      document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) { ctx.suspend(); AU.stopSpeak(); if (keepEl) keepEl.pause(); } else if (AU.unlockedOnce) { keepAlive(); const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); } });
+      window.addEventListener('pageshow', () => { if (ctx && AU.unlockedOnce && !document.hidden) { keepAlive(); ctx.resume().catch(() => {}); } });
+      ctx.onstatechange = () => { if (ctx.state === 'interrupted' && !document.hidden) setTimeout(() => { ctx.resume().catch(() => {}); }, 300); };
     }
     AU.unlockedOnce = true;
-    if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
+    keepAlive();
+    if (ctx.state !== 'running' && ctx.state !== 'closed' && !document.hidden) { const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); }
     if (!timer) timer = setInterval(tick, 25);
     if (AU.mood && !track) startTrack(AU.mood);
   } catch (e) { /* 静默失败 */ }
 };
+/* iOS 静音键：WebAudio 默认走“环境音”通道，侧边静音键一开就完全没声。
+   iOS 17+ 用 navigator.audioSession 设为 playback；更老的 iOS 用一段循环的无声 <audio> 把页面切到“媒体播放”通道。 */
+let keepEl = null;
+function silentWavUrl() {
+  const n = 4000, b = new ArrayBuffer(44 + n), v = new DataView(b); let o = 0;
+  const w = s => { for (let i = 0; i < s.length; i++) v.setUint8(o++, s.charCodeAt(i)); }, u32 = x => { v.setUint32(o, x, true); o += 4; }, u16 = x => { v.setUint16(o, x, true); o += 2; };
+  w('RIFF'); u32(36 + n); w('WAVE'); w('fmt '); u32(16); u16(1); u16(1); u32(8000); u32(8000); u16(1); u16(8); w('data'); u32(n);
+  for (let i = 0; i < n; i++) v.setUint8(o++, 128);
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+}
+function keepAlive() {
+  try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) {}
+  try {
+    if (!/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) || !('ontouchend' in document)) return;
+    if (navigator.audioSession) return;
+    if (!keepEl) { keepEl = document.createElement('audio'); keepEl.setAttribute('playsinline', ''); keepEl.setAttribute('x-webkit-airplay', 'deny'); keepEl.loop = true; keepEl.preload = 'auto'; keepEl.src = silentWavUrl(); keepEl.volume = 0.01; }
+    if (keepEl.paused) { const r = keepEl.play(); if (r && r.catch) r.catch(() => {}); }
+  } catch (e) {}
+}
+AU.keepAlive = keepAlive;
+AU.state = () => ctx ? ctx.state : 'none';
 AU.applyVol = function () {
   if (!ctx) return;
   const mv = AU.cfg.musicOn === false ? 0 : AU.cfg.music * 0.6;

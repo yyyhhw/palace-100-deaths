@@ -15,7 +15,7 @@ UI.isOpen = id => $(id).classList.contains('show');
 UI.init = function () {
   const first = () => { AU.unlock(); primeSpeech(); };
   document.addEventListener('pointerdown', first, { capture: true });
-  document.addEventListener('keydown', first, { capture: true }); document.addEventListener('touchend', first, { capture: true });
+  document.addEventListener('keydown', first, { capture: true }); document.addEventListener('touchend', first, { capture: true }); document.addEventListener('click', first, { capture: true });
   $('#tapLayer').addEventListener('click', () => UI.advance());
   $('#dlg').addEventListener('click', () => UI.advance());
   document.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !document.activeElement.matches('input') && !popupOpen()) { if (!$('#choices').children.length) UI.advance(); } });
