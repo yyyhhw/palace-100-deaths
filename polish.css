@@ -14,7 +14,8 @@
 
 /* ---------- HUD ---------- */
 .pill,.hbtn{background:linear-gradient(rgba(255,251,240,.95),rgba(246,232,200,.95));border-color:#5a2a1e;box-shadow:0 2px 0 rgba(60,25,20,.3),inset 0 0 0 1px rgba(217,164,65,.5)}
-#dayPill{background:linear-gradient(#c23b34,#8e2522);color:#fff3d6;border-color:#4a1210}
+#dayPill{background:linear-gradient(#c23b34,#8e2522);color:#fff3d6;border-color:#4a1210;text-shadow:0 1px 0 rgba(60,10,10,.5)}
+#dayPill b{color:#ffe7a8}#dayPill i{color:#fff3d6}
 .hbtn{transition:transform .12s var(--ease-out)}.hbtn:active{transform:scale(.9)}
 .hbtn.on{background:linear-gradient(#f3d58a,#d9a441);box-shadow:0 0 0 2px rgba(255,230,160,.6),0 2px 0 rgba(60,25,20,.3)}
 
