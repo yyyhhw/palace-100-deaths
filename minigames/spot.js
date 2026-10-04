@@ -24,7 +24,7 @@ Q.spot = {
       const cues = (st.kind === 'dessert') ? cues0.concat(['cat']) : cues0;
       const S = this.state = { odd: Math.floor(Math.random() * n), n, left: dur, wrong: 0, run: false, end: false, cues, marks: {} };
       let alive = true, last = performance.now();
-      const geo = () => { const r = cv.getBoundingClientRect(); const cols = r.width > r.height * 1.6 ? n : (n > 6 ? 4 : 3), rows = Math.ceil(n / cols); const cw = r.width / cols, ch = r.height / rows; return { r, cols, rows, cw, ch, rad: Math.min(cw, ch) * 0.3 }; };
+      const geo = () => { const r = cv.getBoundingClientRect(); const cols = r.width > r.height * 1.6 ? n : (n > 6 ? (r.height > r.width * 1.3 ? 2 : 4) : 3), rows = Math.ceil(n / cols); const cw = r.width / cols, ch = r.height / rows; return { r, cols, rows, cw, ch, rad: Math.min(cw, ch) * 0.3 }; };
       S.itemXY = i => { const { r, cols, cw, ch } = geo(); return { x: r.left + (i % cols + 0.5) * cw, y: r.top + (Math.floor(i / cols) + 0.5) * ch }; };
       const upd = () => { const e = ov.querySelector('.ssc'); if (e) e.textContent = `剩余 ${Math.ceil(S.left)} 秒 · 机会 ${tries - S.wrong}`; };
       const finish = ok => {

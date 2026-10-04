@@ -67,8 +67,8 @@ Q.anhao = {
         const c = ctx; c.setTransform(d, 0, 0, d, 0, 0);
         A.BG.cining ? A.BG.cining(c, W, H) : (c.fillStyle = '#8a5a3a', c.fillRect(0, 0, W, H));
         c.fillStyle = 'rgba(40,20,10,0.25)'; c.fillRect(0, 0, W, H);
-        const s = H / 820, tx = W * 0.3;
-        A.drawChar(c, 'taihou', tx, H * 1.02, s, { t, face: S.face, talk: S.run && !S.answered && Math.sin(t * 18) > 0 });
+        const s = Math.min(H / 470, W / 420), tx = W * 0.3;
+        A.drawChar(c, 'taihou', tx, H + s * 60, s, { t, face: S.face, talk: S.run && !S.answered && Math.sin(t * 18) > 0 });
         if (S.say) { const fs = Math.max(14, Math.min(W * 0.045, H * 0.07)); c.font = `bold ${fs}px sans-serif`; const tw = Math.min(W * 0.5, c.measureText(S.say).width);
           const bx = Math.min(W - tw - 30, tx + W * 0.1), by = H * 0.12; U.rr(c, bx, by, tw + 24, fs * 1.8, 12); U.F(c, '#fffaf0', U.OL, 2.5);
           c.beginPath(); c.moveTo(bx + 10, by + fs * 1.8); c.lineTo(bx - 10, by + fs * 2.6); c.lineTo(bx + 30, by + fs * 1.8); U.F(c, '#fffaf0', U.OL, 2.5); c.fillStyle = '#fffaf0'; c.fillRect(bx + 12, by + fs * 1.8 - 3, 16, 5);

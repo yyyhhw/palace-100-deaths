@@ -5,7 +5,7 @@ const BG = A.BG;
 const { roofTiles, lantern, cloud, tree, palaceWall, floorTiles, txt, plaque, xiangyun } = A;
 Object.assign(A.CH, {
   jingtaifei: { name: '静太妃', skin: '#f3dccd', hair: '#c4bcbc', eye: '#4a3a3a', back: 'none', bangs: 'old', buns: 'tight', old: true, eyesDefault: 'kind', mole: true,
-    outer: '#9d93b4', inner: '#efe8e0', skirt: '#b3aac4', skirt2: '#8a809e', trim: '#6a6084', sash: '#5a5070', pattern: 'patch', pose: 'hold', prop: 'cabbage', orn: ['pinWood', 'apron'] },
+    outer: '#9d93b4', inner: '#efe8e0', skirt: '#b3aac4', skirt2: '#8a809e', trim: '#6a6084', sash: '#5a5070', pattern: 'patch', pose: 'hold', prop: 'cabbage', orn: ['pinWood'] },
   xuanjizi: { name: '玄机子', skin: '#fbe2cf', hair: '#e2e0e6', eye: '#3a3050', back: 'male', bangs: 'male', buns: 'topknot', male: true, old: true, glasses: true, eyesDefault: 'squint',
     outer: '#2c3c72', inner: '#fbfbff', skirt: '#2c3c72', skirt2: '#1c2754', trim: '#f2c24d', sash: '#f2c24d', pattern: 'taiji', pose: 'whisk', prop: 'whisk', orn: ['daoCrown', 'beard', 'robeStars'] },
 });
@@ -56,6 +56,8 @@ BG.lenggong = function (c, W, H) { // 冷宫·菜园
   c.fillStyle = lg(c, 0, 0, 0, H * 0.5, [[0, '#b9c0c8'], [1, '#e2e2dc']]); c.fillRect(0, 0, W, H * 0.5);
   cloud(c, W * 0.25, H * 0.1, H / 800, '#f4f4f0'); cloud(c, W * 0.8, H * 0.14, H / 1000, '#f4f4f0');
   palaceWall(c, H * 0.2, H * 0.46, W);
+  c.fillStyle = 'rgba(150,150,156,0.55)'; c.fillRect(0, 0, W, H * 0.465);
+  c.fillStyle = 'rgba(90,80,80,0.25)'; for (let i = 0; i < 9; i++) { rr(c, W * ((i * 0.137) % 1), H * (0.28 + (i % 3) * 0.05), W * 0.05, H * 0.03, 3); c.fill(); }
   c.fillStyle = 'rgba(120,110,100,0.35)'; for (let i = 0; i < 6; i++) { const x = W * (0.1 + i * 0.16); c.beginPath(); c.moveTo(x, H * 0.3); c.lineTo(x + 8, H * 0.36); c.lineTo(x - 4, H * 0.4); c.lineTo(x + 6, H * 0.45); c.lineWidth = 2; c.strokeStyle = 'rgba(80,60,50,0.4)'; c.stroke(); }
   plaque(c, '冷宫', W * 0.5, H * 0.18, Math.min(W * 0.16, H * 0.2), H * 0.05);
   // 歪门

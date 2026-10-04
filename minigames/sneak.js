@@ -67,7 +67,7 @@ Q.sneak = {
           for (let j = 0; j < 5; j++) for (let k = 0; k < 2; k++) { U.rr(c, x - cw / 2 + 4 + k * (cw - 8) / 2, H * (0.22 + j * 0.1), (cw - 8) / 2 - 2, H * 0.09, 2); U.F(c, '#b8804a', '#5a3418', 1); U.E(c, x - cw / 2 + 4 + k * (cw - 8) / 2 + (cw - 8) / 4, H * (0.27 + j * 0.1), 2, 2); U.F(c, '#f2c24d'); } }
         A.txt(c, '🎯', W * 0.86, H * 0.15, Math.min(W, H) * 0.06, '#fff');
         // 药童（左侧）
-        const bx = W * 0.06, look = S.phase === 'look', warn = S.phase === 'warn';
+        const bx = Math.max(W * 0.06, H * 0.075), look = S.phase === 'look', warn = S.phase === 'warn';
         if (look) { c.fillStyle = 'rgba(255,220,120,0.28)'; c.beginPath(); c.moveTo(bx + W * 0.04, H * 0.5); c.lineTo(W, H * 0.3); c.lineTo(W, H * 0.95); c.closePath(); c.fill(); }
         A.drawChar(c, 'taijian', bx, H * 0.98, H / 1250, { t, face: look ? 'angry' : warn ? 'think' : 'sleepy', still: true, flip: !(look || warn) });
         A.lantern(c, bx + W * 0.04, H * 0.52, H / 1400, t, true);

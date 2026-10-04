@@ -19,7 +19,7 @@ Q.jianyao = {
       const S = this.state = { hands: [], left: dur, time: 0, swaps: 0, slaps: 0, slapTao: 0, run: false, end: false, spawnT: 1.0, bad: [0, 0, 0], fire: 1 };
       let alive = true, last = performance.now(), uid = 0;
       const geo = () => { const r = cv.getBoundingClientRect(); return { r, W: r.width, H: r.height }; };
-      const potXY = i => { const { W, H } = geo(); return { x: W * (0.2 + i * 0.3), y: H * 0.62 }; };
+      const potXY = i => { const { W, H } = geo(); const rad = Math.min(W * 0.11, H * 0.16); return { x: W * (0.2 + i * 0.3), y: H - rad * 2.4 }; };
       // 手：从 (sx,sy) 伸向 罐 i，k: 0→1 为伸到
       const handPos = h => { const p = potXY(h.pot), k = Math.min(1, h.k); return { x: h.sx + (p.x - h.sx) * k, y: h.sy + (p.y - h.sy - geo().H * 0.12) * k }; };
       S.handXY = h => { const r = geo().r, p = handPos(h); return { x: r.left + p.x, y: r.top + p.y }; };
@@ -77,11 +77,16 @@ Q.jianyao = {
         if (cv.width !== (W * d | 0) || cv.height !== (H * d | 0)) { cv.width = W * d | 0; cv.height = H * d | 0; }
         const c = ctx; c.setTransform(d, 0, 0, d, 0, 0);
         c.fillStyle = U.lg(c, 0, 0, 0, H, [[0, '#e9d8bc'], [1, '#c9ae86']]); c.fillRect(0, 0, W, H);
+        const rad = Math.min(W * 0.11, H * 0.16), py = potXY(0).y, st0 = py + rad * 0.55, sh = rad * 1.5;
+        // 墙上：药材架 + 挂着的药包
+        U.rr(c, W * 0.06, H * 0.06, W * 0.88, Math.max(10, H * 0.02), 3); U.F(c, '#8a5a3a', U.OL, 2);
+        for (let i = 0; i < 6; i++) { const x = W * (0.12 + i * 0.152), y = H * 0.08 + Math.max(10, H * 0.02); c.strokeStyle = '#6a4a2a'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + rad * 0.5); c.stroke(); U.rr(c, x - rad * 0.22, y + rad * 0.5, rad * 0.44, rad * 0.5, 4); U.F(c, ['#d8c08a', '#b8d0a0', '#e0b0a0'][i % 3], U.OL, 1.5); }
         // 灶台
-        U.rr(c, W * 0.03, H * 0.7, W * 0.94, H * 0.28, 8); U.F(c, '#9a7a5a', U.OL, 3);
-        for (let i = 0; i < 3; i++) { const p = potXY(i), rad = Math.min(W * 0.11, H * 0.16);
-          U.rr(c, p.x - rad * 0.8, H * 0.78, rad * 1.6, H * 0.12, 6); U.F(c, '#3a2a20', U.OL, 2);
-          for (let k = 0; k < 3; k++) { const fh = (0.5 + Math.sin(t * 12 + k * 2 + i) * 0.2) * S.fire; c.beginPath(); c.moveTo(p.x + (k - 1) * rad * 0.4 - rad * 0.15, H * 0.86); c.quadraticCurveTo(p.x + (k - 1) * rad * 0.4, H * 0.86 - rad * fh * 0.8, p.x + (k - 1) * rad * 0.4 + rad * 0.15, H * 0.86); U.F(c, k === 1 ? '#ffd36b' : '#ff7a3a'); }
+        U.rr(c, W * 0.03, st0, W * 0.94, Math.min(H - st0 - 4, sh), 8); U.F(c, '#9a7a5a', U.OL, 3);
+        for (let i = 0; i < 3; i++) { const p = potXY(i);
+          const fy = st0 + Math.min(H - st0 - 4, sh) * 0.75;
+          U.rr(c, p.x - rad * 0.8, st0 + 6, rad * 1.6, Math.min(H - st0 - 4, sh) - 12, 6); U.F(c, '#3a2a20', U.OL, 2);
+          for (let k = 0; k < 3; k++) { const fh = (0.5 + Math.sin(t * 12 + k * 2 + i) * 0.2) * S.fire; c.beginPath(); c.moveTo(p.x + (k - 1) * rad * 0.4 - rad * 0.15, fy); c.quadraticCurveTo(p.x + (k - 1) * rad * 0.4, fy - rad * fh * 0.9, p.x + (k - 1) * rad * 0.4 + rad * 0.15, fy); U.F(c, k === 1 ? '#ffd36b' : '#ff7a3a'); }
           A.medPot(c, p.x, p.y, rad, S.bad[i] ? '#6a5a7a' : '#8a5a3a', t, true);
           c.fillStyle = '#5a3a2a'; c.font = `bold ${Math.round(rad * 0.4)}px sans-serif`; c.textAlign = 'center'; c.fillText(String(i + 1), p.x, p.y + rad * 0.45);
           if (S.bad[i]) A.txt(c, '✗', p.x + rad * 0.9, p.y - rad * 0.8, rad * 0.6, '#c0392b'); }
