@@ -131,7 +131,7 @@ BG.dawn = function (c, W, H) { // 第一百零一天的清晨
   const r = Math.min(W, H) * 0.1; E(c, W * 0.5, H * 0.42, r, r); F(c, rg(c, W * 0.5, H * 0.42, 0, r, [[0, '#fff6c0'], [1, '#ffb84a']]));
   roofTiles(c, W * 0.05, H * 0.38, W * 0.9, H * 0.06, '#f7cf5a', '#d99a1e'); c.fillStyle = '#c7443f'; c.fillRect(W * 0.08, H * 0.44, W * 0.84, H * 0.18);
   for (let i = 0; i < 7; i++) { rr(c, W * (0.12 + i * 0.115), H * 0.47, W * 0.06, H * 0.15, 3); F(c, '#8a2a22', OL, 2); }
-  c.fillStyle = '#e8d8b8'; c.fillRect(0, H * 0.62, W, H * 0.38); floorTiles && floorTiles(c, H * 0.62, H, W);
+  c.fillStyle = '#e8d8b8'; c.fillRect(0, H * 0.62, W, H * 0.38); floorTiles(c, H * 0.62, W, H, '#efe3cf', '#d4c2a6');
 };
 const prevAnim = A.ANIM_EXT;
 A.ANIM_EXT = function (c, name, W, H, t) {
