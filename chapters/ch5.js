@@ -28,7 +28,56 @@ const allies = G => Object.keys(ALLY).filter(k => ALLY[k](G));
 const MISSING = [['dossier', '旧案卷宗'], ['ledger', '西域账本'], ['jing', '静太妃证词'], ['cloth', '永和宫布料'], ['cuilv', '翠缕证词']];
 const missing = G => MISSING.filter(([k, n]) => !has(G, '证据卡·' + n)).map(x => x[0]);
 const owesDebt = G => C(G, 'silver') < 0 && G.flag('debtDay');
-P.C5 = { EV, allies, ALLY, missing, CHK };
+// 腰牌没找回时，百日宴上谁能替你作证（按顺序，第一个人主讲，其余的人帮腔）
+const TOKEN_HELP = [
+  ['reported', G => !!G.flag('tokenReported')],
+  ['luzheng', G => C(G, 'trust_lu') >= 70],
+  ['xiaotao', G => C(G, 'trust_tao') >= 75 && !G.flag('taoHurt')],
+  ['ayun', G => C(G, 'ayun') >= 60],
+];
+const tokenRescue = G => TOKEN_HELP.filter(([k, f]) => f(G)).map(x => x[0]);
+const TOKEN_MAIN = {
+  reported: [
+    { enter: 'xiaoan', face: 'panic', pos: 'CL', sfx: 'pop' },
+    { s: 'xiaoan', f: 'panic', t: '（抱着一摞册子，一路从殿外滑跪进来）且慢——！！内务府失物册，第九十六天那一页，奴才给您带来了！' },
+    { s: 'n', t: '小安子把册子摊在御案上。上面是你自己写的两页“报失文书”，连红绳的断口都画了图，末尾一枚鲜红的手印。' },
+    { s: 'xiaoan', f: 'smirk', t: '“旧牌作废”四个大字，内务府盖的章！皇上您看——这块牌子四天前就不是小主的了。谁带着它，谁才说不清！' },
+    { s: 'emperor', f: 'shock', t: '……{宫名}，你连这个都写了？' },
+    { s: 'me', f: 'smirk', t: '内务府的小公公说我写的不是报失，是案卷。现在看来，他说对了。' },
+  ],
+  luzheng: [
+    { enter: 'luzheng', face: 'normal', pos: 'CL', pose: 'spear', prop: 'spear' },
+    { s: 'luzheng', f: 'normal', t: '（收枪，单膝跪地）启禀皇上。九十八天，{位份}在宫道上亲口告诉卑职，腰牌丢了。' },
+    { s: 'luzheng', f: 'think', t: '卑职当天就记在了值房的簿子上：“某宫{位份}失腰牌一块，红绳剪断，疑有人图谋”。卑职的簿子，从不记错。' },
+    { s: 'luzheng', f: 'normal', t: '而且刺客的腰带，系的是永和宫的结法。这个结，卑职在王福身上见过。职责所在。' },
+    { s: 'os', f: 'smile', t: '（给烤鸭上香的人，记性果然也好。）' },
+  ],
+  xiaotao: [
+    { enter: 'xiaotao', face: 'angry', pos: 'CL', sfx: 'pop' },
+    { s: 'xiaotao', f: 'angry', t: '（从殿门口冲进来，挡在你面前）不许冤枉我们小主！腰牌丢的那天早上，是奴婢头一个发现的！' },
+    { s: 'xiaotao', f: 'cry', t: '红绳是剪断的！小主还拿着那截绳子闻了半天，奴婢当时还以为她饿了——' },
+    { s: 'xiaotao', f: 'angry', t: '小主这一百天，每天想的都是怎么活下去，哪有空送刺客腰牌！她连桂花糕都舍不得送人！' },
+    { s: 'emperor', f: 'think', t: '……桂花糕，她送过朕。' }, { s: 'xiaotao', f: 'sweat', t: '……那、那是例外！' },
+  ],
+  ayun: [
+    { enter: 'ayun', face: 'angry', pos: 'CL', sfx: 'pop' },
+    { s: 'ayun', f: 'angry', t: '（从宫女堆里挤出来）浣、浣衣局阿芸！奴婢能作证——那天王福公公往永和宫的脏衣筐里塞过一块木牌！' },
+    { s: 'ayun', f: 'normal', t: '他还给了奴婢一个铜板封口。铜板在这儿！（啪地拍在御案上）奴婢一直留着，就等今天！' },
+    { s: 'wenshang', f: 'sweat', t: '……一、一个铜板能说明什么？' },
+    { s: 'ayun', f: 'smirk', t: '说明王福公公抠门。也说明他心虚。' },
+  ],
+};
+const TOKEN_CHIME = {
+  reported: { s: 'xiaoan', name: '小安子', t: '（在旁边举着册子）内务府的章，红的！' },
+  luzheng: { s: 'luzheng', name: '陆峥', t: '值房的簿子上也记着。卑职可以作证。' },
+  xiaotao: { s: 'xiaotao', name: '小桃', t: '奴婢也看见了！红绳是剪断的！' },
+  ayun: { s: 'ayun', name: '阿芸', t: '王福塞东西的时候，奴婢就在旁边！铜板为证！' },
+};
+P.C5_TOKEN = { TOKEN_HELP, TOKEN_MAIN, TOKEN_CHIME };
+const TOKEN_STEPS = [G => { const w = tokenRescue(G); if (w.length) G.run.flags.tokenWitness = w[0]; return null; }]
+  .concat(TOKEN_HELP.map(([k]) => ({ if: G => tokenRescue(G)[0] === k, then: TOKEN_MAIN[k] })))
+  .concat(TOKEN_HELP.map(([k]) => ({ if: G => tokenRescue(G).indexOf(k) > 0, then: [TOKEN_CHIME[k]] })));
+P.C5 = { EV, allies, ALLY, missing, CHK, tokenRescue };
 
 /* ---------------- 开场 ---------------- */
 N.c5_start = [
@@ -37,13 +86,80 @@ N.c5_start = [
     c.intel = c.intel || 3; c.ayun = c.ayun || 0; c.jing = c.jing || 0; c.trust_wen = c.trust_wen || 15; if (c.ning == null) c.ning = 60; c.kill = c.kill || 0;
     if (c.hh == null) c.hh = f.side === 'hou' ? 10 : f.side === 'fei' ? 45 : 25;
     c.scheme = 0; if (c.silver == null) c.silver = 30;
-    ['tokenOk', 'tokenLost', 'jingSafe', 'cuilvSafe', 'taoSafe', 'taoHurt', 'fireReady', 'wineKnown', 'debtDay', 'seatOk', 'gift', 'herbBook', 'exposed5'].forEach(k => { delete f[k]; });
+    ['tokenOk', 'tokenLost', 'tokenReported', 'jingSafe', 'cuilvSafe', 'taoSafe', 'taoHurt', 'fireReady', 'wineKnown', 'debtDay', 'seatOk', 'gift', 'herbBook', 'exposed5', 'tokenWitness'].forEach(k => { delete f[k]; });
     if (!f.rank) f.rank = '常在'; },
   { hud: true },
   { title: '第五章 · 百日宴', sub: '筹备 · 火场 · 百日宴 · 照影镜 · 第 96–100 天' },
   { go: 'c5_d96' },
 ];
 
+/* 腰牌丢了：去内务府补牌 / 报失（报失登记在册，百日宴上能自证清白） */
+const REPORT = (intro) => [
+  { bg: 'courtyard', music: 'day', cast: [['me', 'normal', 'L'], ['taijian', 'normal', 'R', { pose: 'hold', prop: 'ledger' }]] },
+  { s: 'n', t: intro || '内务府。一个打着哈欠的小太监，坐在一摞比他还高的册子后面。' },
+  { s: 'taijian', f: 'normal', t: '补腰牌？十文钱，立等可取。' },
+  { s: 'taijian', f: 'sleepy', t: '要是“报失”嘛……得写文书：哪天丢的、在哪儿丢的、怎么丢的，按手印，登记在册。要等半个时辰，小主您看——' },
+  { s: 'xiaotao', f: 'think', t: '（小声）小主，写文书好麻烦的，上回奴婢报失一只鞋，写了三页。' },
+  { c: [
+    { t: '“写！按手印！哪天、哪儿、红绳是剪断的——全写上。”（登记报失）', then: [
+      { s: 'n', t: '你足足写了两页纸。连“红绳断口整齐，疑似剪刀所为；作案时间，大约是昨夜”都写上了。' },
+      { s: 'taijian', f: 'shock', t: '……小主，您这不是报失，是在写案卷。' },
+      { s: 'me', f: 'smirk', t: '对。将来要是有人拿着我的旧腰牌干坏事，这页纸就是我的证人。' },
+      { s: 'taijian', f: 'smile', t: '得嘞，第九十六天，丙字第七号，登记在册！新腰牌给您——旧牌作废！' },
+      { set: { tokenReported: true } }, { item: '腰牌（新补的）' },
+      { s: 'os', f: 'normal', t: '（旧的还在外面。但至少，白纸黑字，它从今天起“不是我的”了。）' },
+    ] },
+    { t: '“只补牌就行，文书就免了。”', danger: '084', then: [
+      { s: 'taijian', f: 'smile', t: '爽快！十文钱，拿好。' },
+      { s: 'os', f: 'think', t: '（新牌子到手了。旧的那块……算了，应该没人捡一块木牌子去干什么吧。）' },
+      { item: '腰牌（新补的）' },
+    ] },
+  ] },
+];
+/* 自己查：从剪断的红绳查起（任何时候都能选） */
+N.c5_search = [G => ({ go: G.flag('movedOut') ? 'c5_searcha' : 'c5_searchb' })];
+const SEARCH = [
+  { s: 'me', f: 'think', t: '小桃，把那截红绳给我。' },
+  { s: 'n', t: '你把红绳凑到鼻子底下。断口齐整，是剪子剪的。绳子上一股皂角味，皂角味底下，还有一丝甜腻的——茉莉香。' },
+  { s: 'xiaotao', f: 'shock', t: '皂角是浣衣局洗衣裳用的！茉莉香……宫里谁用茉莉香来着？' },
+  { s: 'me', f: 'smirk', t: '谁笑起来，像一朵刚开的茉莉？' },
+  { s: 'xiaotao', f: 'think', t: '……贵妃娘娘？' }, { s: 'me', f: 'sweat', t: '贵妃笑起来像一盆仙人掌。' },
+  { bg: 'laundry', music: 'mystery', cast: [['me', 'normal', 'L'], ['ayun', 'normal', 'C'], ['xiaotao', 'think', 'R']] },
+  { s: 'n', t: '浣衣局。院子里摆着一排脏衣筐，每只筐上贴着一张红纸：长春、坤宁、永和、延禧……' },
+  { s: 'ayun', f: 'sweat', t: '小主？今天管事盯得紧，您要找什么，得快——一筐只能翻一回，翻错了，管事要骂人的。' },
+  { s: 'n', t: '💡 红绳上有皂角味和茉莉香。翻哪一筐？' },
+  { c: [
+    { t: '翻贴着“长春”的筐', then: [
+      { s: 'n', t: '你翻出了三斤瓜子壳、两把断了骨的团扇，和一张写着“丽昭仪今日又穿错颜色”的小纸条。' },
+      { s: 'xiaotao', f: 'sweat', t: '……贵妃娘娘的衣服里，怎么全是瓜子壳？' },
+      { s: 'ayun', f: 'panic', t: '管事来了！小主快走！' },
+      { set: { tokenLost: true } },
+      { s: 'os', f: 'sweat', t: '（腰牌没找着。只能先去内务府了。）' },
+      ...REPORT('你灰头土脸地出了浣衣局，转身进了内务府。'),
+    ] },
+    { t: '翻贴着“永和”的筐——茉莉香，是宁嫔', then: [
+      { s: 'ayun', f: 'shock', t: '永和宫的？那里头全是宁嫔娘娘的……小主小心，她的衣裳上都熏着香，熏得我直打喷嚏。' },
+      { s: 'n', t: '你把手伸进筐底，在一件绣着荷花、熏透了茉莉香的中衣里，摸到了一块硬邦邦的木牌。' },
+      { s: 'n', t: '正面刻着你的名字，背面多了一道新划的记号。' },
+      { s: 'ayun', f: 'angry', t: '我想起来了！昨天王福公公亲手往这筐里塞过东西，还给了我一个铜板，说“别多嘴”。……这铜板我不要了！我要扔他脸上！' },
+      { s: 'xiaotao', f: 'star', t: '小主好厉害！闻一闻就找着了！比御膳房的狗还灵！' },
+      { s: 'me', f: 'sweat', t: '……谢谢，下回换个夸法。' },
+      { set: { tokenOk: true } }, { item: '腰牌' }, add('ayun', 5), add('intel', 1),
+      { s: 'os', f: 'smirk', t: '（腰牌塞进脏衣服，送回永和宫，百日宴上交给刺客。宁嫔，你的香太浓了。）' },
+    ] },
+    { t: '翻贴着“坤宁”的筐', then: [
+      { s: 'n', t: '皇后娘娘的筐里叠得整整齐齐，每件衣服上都别着一张小纸条：“初一穿”“十五穿”“见太后穿”。' },
+      { s: 'xiaotao', f: 'shock', t: '连脏衣服都叠得这么整齐……' },
+      { s: 'ayun', f: 'panic', t: '小主！那是皇后娘娘的筐！翻乱了要掉脑袋的！快放回去！' },
+      { set: { tokenLost: true } },
+      { s: 'os', f: 'sweat', t: '（腰牌没找着，还差点闯祸。先去内务府吧。）' },
+      ...REPORT('你小心翼翼地把皇后的衣服叠回原样，溜出了浣衣局，转身进了内务府。'),
+    ] },
+  ] },
+  { go: 'c5_d96rest' },
+];
+N.c5_searcha = [{ bg: 'room_day', music: 'mystery', cast: [['me', 'think', 'L'], ['xiaotao', 'sweat', 'R']] }].concat(SEARCH);
+N.c5_searchb = [{ bg: 'yonghe', music: 'mystery', cast: [['me', 'think', 'L'], ['xiaotao', 'sweat', 'R']] }].concat(SEARCH);
 /* ---------------- 第 96 天 · 最后一期晨报 ---------------- */
 N.c5_d96 = [
   { day: 96, time: '晨', label: '第96天 · 最后一期晨报', ch: 'ch5' },
@@ -90,6 +206,7 @@ const D96 = [
       { set: { tokenOk: true } }, { item: '腰牌' }, add('ayun', 5), add('intel', 1),
       { s: 'os', f: 'smirk', t: '（腰牌塞进脏衣服，送回永和宫，百日宴上交给刺客。这一回，我先把它拿回来了。）' },
     ] },
+    { t: '“我自己查。就从这截剪断的红绳查起。”', go: 'c5_search' },
     { t: '“小安子、小桃，帮我找。阿芸那边也问问。”', then: [
       { if: G => (G.flag('anStable') || C(G, 'intel') >= 4) && (C(G, 'ayun') >= 45 || G.flag('ayunStable')), then: [
         { s: 'xiaoan', f: 'smirk', t: '得令！小主放心——偷东西的人，总要把东西藏起来；藏东西的人，总要有人搬；搬东西的人里头，有奴才的牌搭子。' },
@@ -103,15 +220,21 @@ const D96 = [
         { s: 'xiaoan', f: 'sweat', t: '小主，要不……先去内务府补一块？' },
         { s: 'os', f: 'think', t: '（补一块新的倒是不难。可那块旧的，现在在谁手里？）' },
         { set: { tokenLost: true } },
+        ...REPORT(),
       ] },
     ] },
-    { t: '“一块木牌子而已，去内务府补一块就是。”', danger: '084', then: [
+    { t: '“一块木牌子而已，去内务府补一块就是。”', then: [
       { s: 'xiaotao', f: 'sweat', t: '小主说得对……就是补牌子要交十文钱。' },
       { s: 'xiaoan', f: 'think', t: '小主，奴才多一句嘴：丢东西不可怕，可怕的是东西去了哪儿。' },
       { s: 'me', f: 'normal', t: '别想那么多。四天之后就是百日宴，我要操心的事比一块木牌子大多了。' },
-      { set: { tokenLost: true } }, { item: '腰牌（新补的）' },
+      { set: { tokenLost: true } },
+      ...REPORT(),
     ] },
   ] },
+  { go: 'c5_d96rest' },
+];
+N.c5_d96rest = [G => ({ go: G.flag('movedOut') ? 'c5_d96ra' : 'c5_d96rb' })];
+const D96R = [
   { s: 'xiaoan', f: 'think', t: '对了小主，奴才在御膳房听人议论：说您……能掐会算。上回巫蛊案、上上回落水，您都“早有准备”。' },
   { s: 'xiaoan', f: 'smile', t: '您给奴才透个底呗？百日宴，顺不顺利？' },
   { c: [
@@ -133,6 +256,9 @@ const D96 = [
   ] },
   { go: 'c5_gift' },
 ];
+const D96RC = [['me', 'normal', 'L'], ['xiaotao', 'smile', 'C'], ['xiaoan', 'smile', 'R']];
+N.c5_d96ra = [{ bg: 'room_day', music: 'day', cast: D96RC }].concat(D96R);
+N.c5_d96rb = [{ bg: 'yonghe', music: 'day', cast: D96RC }].concat(D96R);
 N.c5_d96a = [{ bg: 'room_day', music: 'day', cast: [['me', 'normal', 'L'], ['xiaotao', 'smile', 'C']] }].concat(D96);
 N.c5_d96b = [{ bg: 'yonghe', music: 'day', cast: [['me', 'normal', 'L'], ['xiaotao', 'smile', 'C']] }].concat(D96);
 
@@ -302,6 +428,29 @@ N.c5_d97 = [
 /* 午后 · 御花园：谣言 · 093；查漏补缺 */
 N.c5_d97p = [
   { time: '午' },
+  { if: G => !G.flag('tokenOk'), then: [
+    { bg: 'courtyard', music: 'mystery', cast: [['me', 'normal', 'L'], ['xiaotao', 'sweat', 'R']] },
+    { s: 'xiaotao', f: 'sweat', t: '小主……奴婢昨晚做了个梦，梦见您那块旧腰牌长了腿，自己跑去了百日宴，还坐在了主桌上。' },
+    { s: 'me', f: 'smirk', t: '它倒是比我会挑位子。' },
+    { s: 'xiaotao', f: 'think', t: '奴婢是说真的！旧腰牌上刻着您的名字呢。万一被坏人捡了去……' },
+    { if: G => G.flag('tokenReported'), then: [
+      { s: 'me', f: 'normal', t: '放心。内务府的册子上白纸黑字写着：第九十六天，丙字第七号，旧牌作废。谁拿着它，谁说不清。' },
+      { s: 'xiaotao', f: 'smile', t: '……原来那两页纸是干这个用的！奴婢以后丢鞋也写两页！' },
+    ], else: [
+      { s: 'os', f: 'think', t: '（小桃说得对。一块刻着我名字的木牌，丢在一个想要我命的宫里。）' },
+      { c: [
+        { t: '“走，现在就去内务府，补报失。”', then: [
+          { s: 'n', t: '内务府的小太监抬起眼皮：“晚报一天，罚两文。”你写了两页纸，按了手印。' },
+          { s: 'taijian', name: '内务府太监', t: '登记在册：第九十七天补报，丙字第九号，旧牌作废。……小主，您这字写得跟案卷似的。' },
+          { set: { tokenReported: true } },
+          { s: 'xiaotao', f: 'smile', t: '这下踏实了！' },
+        ] },
+        { t: '“一块木牌子而已，别自己吓自己。”', danger: '084', then: [
+          { s: 'xiaotao', f: 'sweat', t: '……哦。（小声）可奴婢还是觉得它会跑去主桌。' },
+        ] },
+      ] },
+    ] },
+  ] },
   { bg: 'garden', music: 'day', cast: [['me', 'normal', 'L'], ['xiaotao', 'sweat', 'LL']] },
   { s: 'n', t: '从慈宁宫出来，御花园的假山后头，传来一阵嘀嘀咕咕。' },
   { enter: 'lizhaoyi', face: 'smirk', pos: 'R' },
@@ -386,6 +535,17 @@ N.c5_d98 = [
   { s: 'luzheng', f: 'sweat', t: '……职责所在。御膳房的事，卑职管不了。' },
   { s: 'luzheng', f: 'think', t: '卑职给它上了一炷香。' },
   { s: 'os', f: 'smile', t: '（给烤鸭上香。这个人，比我想的还要认真。）' },
+  { if: G => !G.flag('tokenOk'), then: [
+    { s: 'luzheng', f: 'think', t: '……还有一事。听说{位份}的腰牌丢了。' },
+    { s: 'luzheng', f: 'normal', t: '百日宴那天，殿门查一遍腰牌，殿里还要再查一遍。一块刻着名字、却不在主人身上的腰牌——卑职当差八年，没见它干过好事。' },
+    { if: G => G.flag('tokenReported'), then: [
+      { s: 'me', f: 'normal', t: '我在内务府报过失了，登记在册。' },
+      { s: 'luzheng', f: 'normal', t: '好。那册子，卑职记下了。' },
+    ], else: [
+      { s: 'luzheng', f: 'think', t: '内务府那边，报过失没有？……没有的话，卑职多一句嘴：记性好的人，比册子靠得住。{位份}身边，最好有几个记得这事的人。' },
+      { s: 'os', f: 'think', t: '（陆峥的意思是：真出了事，得有人肯站出来替我说话。）' },
+    ] },
+  ] },
   { if: G => has(G, '御前密令'), then: [
     { s: 'n', t: '你从袖子里取出那块乌木令牌。陆峥的眼神一下子变了，单膝跪地。' },
     { s: 'luzheng', f: 'normal', t: '见令如见君。{位份}请吩咐。' },
@@ -820,7 +980,7 @@ N.c5_after = [
   { cast: [['me', 'shock', 'L'], ['emperor', 'shock', 'C'], ['cike', 'angry', 'R'], ['luzheng', 'angry', 'RR', { pose: 'spear', prop: 'spear' }]] },
   { s: 'n', t: '抬“贺礼”的八个人掀翻了宴桌。盘子、酒壶、烤鸭漫天乱飞，一整盘红烧肉直奔皇上的面门而去——', shake: 0.8, sfx: 'thud' },
   { c: [
-    { t: '“皇上小心！”——扑过去挡在皇上前面', danger: G => G.stat('警觉') < 60 ? '085' : null, then: [
+    { t: '“皇上小心！”——扑过去挡在皇上前面（得眼疾手快：👁 警觉 ≥ 60）', danger: G => G.stat('警觉') < 60 ? '085' : null, then: [
       { if: G => G.stat('警觉') >= 60, then: [
         { s: 'n', t: '你看准了那盘红烧肉的来路，一把把皇上按到桌子底下。红烧肉擦着你的发髻飞了过去，糊在了温尚书的乌纱帽上。' },
         { s: 'emperor', f: 'shock', t: '……{宫名}，你的眼睛比朕的侍卫还快。' },
@@ -852,13 +1012,25 @@ N.c5_after = [
   { if: G => !G.flag('tokenOk'), then: [
     { s: 'guard', name: '侍卫', t: '——腰牌上刻着：{位份}{宫名}！' },
     { s: 'n', t: '满殿的人，齐刷刷地看向你。' },
-    { s: 'me', f: 'panic', t: '那、那是我丢的！我四天前就丢了！我只是丢了个东西啊！' },
+    { cast: [['me', 'panic', 'L'], ['emperor', 'angry', 'C'], ['ningpin', 'cry', 'R'], ['wenshang', 'smirk', 'RR']] },
+    { s: 'me', f: 'panic', t: '那、那是我丢的！我四天前就丢了！' },
     { s: 'ningpin', f: 'cry', t: '皇上！刺客身上带着她的腰牌——她刚才那一番话，就是为了引开大家的注意！' },
-    { s: 'wenshang', f: 'smirk', t: '贼喊捉贼，好一出大戏！' },
-    { s: 'n', t: '证据还摆在御案上。可你的腰牌，挂在刺客的腰上。' },
-    { s: 'n', t: '💡 第 96 天丢的腰牌，没有找回来。' },
-  ], death: '084' },
-  { s: 'guard', name: '侍卫', t: '——腰牌上刻着：永和宫，王福！' },
+    { s: 'wenshang', f: 'smirk', t: '贼喊捉贼，好一出大戏！丢了？谁能证明是丢的，不是“送”的？' },
+    { if: G => !tokenRescue(G), then: [
+      { s: 'n', t: '你张了张嘴，看向四周。没有人说话。内务府的册子上没有你的名字，记得这件事的人，也没有一个站出来。' },
+      { s: 'n', t: '证据还摆在御案上。可你的腰牌，挂在刺客的腰上。' },
+      { s: 'n', t: '💡 第 96 天丢的腰牌，没有找回、没有报失，也没人替你作证。' },
+      { death: '084' },
+    ] },
+    ...TOKEN_STEPS,
+    { s: 'emperor', f: 'think', t: '……宁嫔。' },
+    { s: 'emperor', f: 'normal', t: '腰牌刚搜出来，上面刻的字还没念完，你就知道它是“刺客带进来”的？' },
+    { s: 'ningpin', f: 'shock', t: '臣、臣妾只是……一时情急……' },
+    { s: 'wenshang', f: 'sweat', t: '（往后挪了半步）这、这个……老臣什么也没说。“贼喊捉贼”是老臣的口头禅，不针对任何人。' },
+    { s: 'os', f: 'smirk', t: '（一个急着往我身上泼水，一个急着把自己摘干净。你们俩的默契，三年都没练出来。）' },
+    { s: 'guard', name: '侍卫', t: '启禀皇上！刺客腰间还缠着另一块腰牌——' },
+  ] },
+  { s: 'guard', name: '侍卫', t: '——上面刻着：永和宫，王福！' },
   { s: 'n', t: '永和宫的大太监王福，“扑通”一声瘫在了地上。' },
   { cast: [['me', 'normal', 'L'], ['ningpin', 'cry', 'R', { pose: 'hold', prop: 'wine' }]] },
   { s: 'n', t: '侍卫上前要押宁嫔。她没有挣扎，只是从翻倒的桌上捡起一只酒杯，倒满了，捧到你面前。' },
