@@ -26,8 +26,8 @@ AU.unlock = function () {
       // iOS：播放一个静音 buffer 解锁
       const sb = ctx.createBufferSource(); sb.buffer = ctx.createBuffer(1, 1, 22050); sb.connect(ctx.destination); sb.start(0);
       AU.applyVol(); AU.ready = true;
-      document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) { ctx.suspend(); AU.stopSpeak(); if (keepEl) keepEl.pause(); } else if (AU.unlockedOnce) { keepAlive(); const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); } });
-      window.addEventListener('pageshow', () => { if (ctx && AU.unlockedOnce && !document.hidden) { keepAlive(); ctx.resume().catch(() => {}); } });
+      if (!AU._lis) { AU._lis = true; document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) { ctx.suspend(); AU.stopSpeak(); if (keepEl) keepEl.pause(); } else if (AU.unlockedOnce) { keepAlive(); const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); } });
+      window.addEventListener('pageshow', () => { if (ctx && AU.unlockedOnce && !document.hidden) { keepAlive(); ctx.resume().catch(() => {}); } }); }
       ctx.onstatechange = () => { if (ctx.state === 'interrupted' && !document.hidden) setTimeout(() => { ctx.resume().catch(() => {}); }, 300); };
     }
     AU.unlockedOnce = true;
@@ -333,6 +333,13 @@ AU.setMood = function (m, force) {
   if (!m) return; if (AU.mood === m && track && track.mood === m && !force) return;
   AU.mood = m; if (!ctx) return;
   try { startTrack(m); } catch (e) { console.warn('music', e); }
+};
+/* 手动重建音频（设置里的“🔊 测试声音”）：关掉旧的 AudioContext，在这次点击里重新创建 */
+AU.reset = function () {
+  try { if (ctx) { try { ctx.close(); } catch (e) {} } } catch (e) {}
+  ctx = null; AU.ctx = null; track = null; queue = []; voices = [];
+  for (const k in ksCache) delete ksCache[k];
+  AU.unlock();
 };
 AU.stopMusic = function () { if (track && ctx) { track.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.3); } track = null; queue = []; };
 AU.state = function () { return { ctx: ctx ? ctx.state : 'none', mood: AU.mood, track: track && track.mood, queued: queue.length, voices: voices.length, duck: duckG ? duckG.gain.value : null, music: musicBus ? musicBus.gain.value : null, cfg: Object.assign({}, AU.cfg), debug: Object.assign({}, AU.debug) }; };

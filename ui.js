@@ -437,6 +437,7 @@ UI.menu = async function () {
 UI.settings = function () {
   const s = G.meta.settings;
   const html = `<div class="set"><label>🎶 背景音乐 <input type="checkbox" id="sMusOn" ${s.musicOn !== false ? 'checked' : ''}></label><label>🎵 音乐音量 <input type="range" min="0" max="1" step="0.05" id="sMus" value="${s.music}"></label>
+  <p><button class="btn" id="sTest">🔊 测试声音</button> <small id="sAud"></small></p>
   <label>🔔 音效 <input type="range" min="0" max="1" step="0.05" id="sSfx" value="${s.sfx}"></label>
   <label>🗣️ 死法卡朗读吐槽 <input type="checkbox" id="sSp" ${s.speech ? 'checked' : ''}></label>
   <label>🫨 危险选项轻微抖动（简单模式·第六感）<input type="checkbox" id="sSix" ${s.sixth !== false ? 'checked' : ''}></label>
@@ -449,6 +450,8 @@ UI.settings = function () {
   const upd = () => { s.musicOn = $('#sMusOn').checked; s.music = +$('#sMus').value; s.sfx = +$('#sSfx').value; s.speech = $('#sSp').checked; s.sixth = $('#sSix').checked; s.speed = +$('#sSpd').value; s.skipAll = $('#sSkip').value === '1'; skipBadge(); Object.assign(AU.cfg, s); AU.applyVol(); if (!s.speech) AU.stopSpeak(); G.save(); };
   ['#sMus', '#sSfx', '#sSp', '#sSix', '#sSpd'].forEach(id => $(id).addEventListener('input', upd));
   ['#sMusOn', '#sSp', '#sSix', '#sSpd', '#sSkip'].forEach(id => $(id).addEventListener('change', upd));
+  const audInfo = () => { const st = AU.state(); $('#sAud').textContent = st === 'running' ? '声音已开启' : ('声音状态：' + st + '（点“测试声音”）'); };
+  audInfo(); $('#sTest').onclick = () => { if (s.musicOn === false || s.music <= 0) { $('#sMusOn').checked = true; if (+$('#sMus').value <= 0) $('#sMus').value = 0.5; } if (s.sfx <= 0) $('#sSfx').value = 0.8; upd(); AU.reset(); setTimeout(() => { AU.sfx('select'); audInfo(); }, 150); setTimeout(audInfo, 800); };
   let armed = false; $('#sWipe').onclick = () => { if (!armed) { armed = true; $('#sWipe').textContent = '⚠️ 再点一次确认清除（不可恢复）'; return; } G.wipe(); UI.closeModal(); G.stop(); UI.title(); UI.toast('存档已清除', 'info'); };
 };
 
