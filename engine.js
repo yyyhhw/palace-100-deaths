@@ -135,11 +135,11 @@ function drawFrame(ts) {
     const tx = (POS[c.pos] != null ? POS[c.pos] : c.pos) || 0.5;
     if (c.x == null) c.x = tx + (c.from || 0); c.x += (tx - c.x) * Math.min(1, dt * 7);
     c.a = Math.min(1, (c.a || 0) + dt * 4); if (c.leaving) c.a = Math.max(0, c.a - dt * 8);
-    if (!c.blinkT || t > c.blinkT + 0.14) { if (!c.blinkT || t > c.blinkT + 0.14 + (c.blinkGap || 3)) { c.blinkT = t; c.blinkGap = 2 + Math.random() * 3; } }
-    const blink = t - c.blinkT < 0.13;
+    if (!c.blinkT || t > c.blinkT + 0.16) { if (!c.blinkT || t > c.blinkT + 0.16 + (c.blinkGap || 3)) { c.blinkT = t; c.blinkGap = (Math.random() < 0.18 ? 0.05 : 2 + Math.random() * 3); } } // 偶尔连眨两下
+    const bk = (t - c.blinkT) / 0.16, blink = bk < 1 ? Math.sin(bk * Math.PI) : 0; // 0..1 半眨 → 闭眼 → 睁开
     const speaking = stage.speaker === c.id, jump = c.jump ? Math.max(0, c.jump) : 0;
     if (c.jump) c.jump -= dt * 3;
-    let y = BASE() - Math.sin(Math.max(0, jump) * Math.PI) * 30;
+    let y = BASE() - Math.sin(Math.max(0, jump) * Math.PI) * 30 - (speaking && stage.talking && !(P.UI && P.UI.skip) ? Math.abs(Math.sin(t * 7)) * 2.2 : 0);
     let sc = s * (speaking ? 1.03 : 1) * (c.big || 1);
     const ghost = c.ghost;
     if (ghost) y -= Math.min(1, (t - (c.ghostT || t))) * 40;

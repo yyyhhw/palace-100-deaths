@@ -83,54 +83,87 @@ const FACES = A.FACES = {
 };
 
 const OPENISH = ['open', 'half', 'shock', 'star', 'sly', 'proud', 'stern', 'kind', 'angry'];
+/* 动漫眼（v2）：杏仁形眼白 + 上缘阴影；虹膜三段渐变 + 上半暗影 + 下缘反光 + 瞳孔 + 放射纹 + 三处高光；
+   粗上睫毛带眼尾翘起、下睫毛短线、双眼皮折线。blink 可以是 true 或 0..1（半眨眼 → 闭眼）。 */
+function eyeWhite(c, x, y, rx, ry, s) {
+  c.beginPath(); c.moveTo(x - s * rx, y + ry * 0.08);
+  c.bezierCurveTo(x - s * rx * 0.98, y - ry * 0.92, x + s * rx * 0.7, y - ry * 1.1, x + s * (rx + 1.6), y - ry * 0.38);
+  c.bezierCurveTo(x + s * (rx + 1.4), y + ry * 0.62, x + s * rx * 0.45, y + ry * 1.02, x, y + ry * 0.98);
+  c.bezierCurveTo(x - s * rx * 0.62, y + ry * 0.96, x - s * rx * 1.02, y + ry * 0.62, x - s * rx, y + ry * 0.08); c.closePath();
+}
+function lashTop(c, x, y, rx, ry, s) { // 沿眼白上缘的曲线（描粗当睫毛）
+  c.beginPath(); c.moveTo(x - s * (rx + 0.5), y + ry * 0.1);
+  c.bezierCurveTo(x - s * rx * 0.98, y - ry * 0.95, x + s * rx * 0.7, y - ry * 1.13, x + s * (rx + 2), y - ry * 0.4);
+}
 function drawEye(c, x, y, side, mode, sp, look, lookY, blink) {
-  const dark = '#2a1622';
-  if (blink && OPENISH.includes(mode)) mode = 'closed';
+  const dark = '#24121e', fem = !sp.male;
+  let half = false;
+  if (blink && OPENISH.includes(mode)) { const b = blink === true ? 1 : blink; if (b >= 0.6) mode = 'closed'; else if (b >= 0.22) half = true; }
   c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
   if (OPENISH.includes(mode)) {
     let rx = 12.5, ry = 15.5;
-    if (mode === 'stern') { rx = 11; ry = 9.5; }
-    if (mode === 'kind') { rx = 10; ry = 11; }
+    if (mode === 'stern') { rx = 11.5; ry = 10; }
+    if (mode === 'kind') { rx = 10.5; ry = 11.5; }
     if (mode === 'sly' || mode === 'proud') { rx = 13; ry = 13.5; }
-    E(c, x, y, rx, ry); F(c, '#fff');
-    c.save(); E(c, x, y, rx, ry); c.clip();
-    const ix = x + (look || 0) * 4, iy = y + 2 + (lookY || 0) * 4;
+    const s = side;
+    eyeWhite(c, x, y, rx, ry, s); F(c, '#fffdfb');
+    c.save(); eyeWhite(c, x, y, rx, ry, s); c.clip();
+    E(c, x, y - ry * 0.85, rx * 1.4, ry * 0.5); F(c, 'rgba(110,60,95,0.2)'); // 睫毛投在眼白上的阴影
+    const ix = x + (look || 0) * 4 + s * 0.6, iy = y + 2.2 + (lookY || 0) * 4, irx = rx * 0.8, iry = ry * 0.88;
     if (mode === 'shock') { E(c, ix, iy, 5, 6); F(c, dark); E(c, ix - 1.5, iy - 2, 1.6, 1.6); F(c, '#fff'); }
     else {
-      E(c, ix, iy, rx - 2, ry - 1.5); F(c, lg(c, ix, iy - ry, ix, iy + ry, [[0, shade(sp.eye, -0.6)], [0.5, sp.eye], [1, shade(sp.eye, 0.5)]]));
-      E(c, ix, iy + 1, (rx - 2) * 0.48, (ry - 1.5) * 0.5); F(c, shade(sp.eye, -0.72));
-      E(c, ix + 1, iy + ry * 0.55, rx * 0.55, ry * 0.25); F(c, 'rgba(255,255,255,0.3)');
+      const ec = sp.eye;
+      E(c, ix, iy, irx, iry); F(c, lg(c, ix, iy - iry, ix, iy + iry, [[0, shade(ec, -0.62)], [0.42, shade(ec, -0.1)], [0.78, ec], [1, shade(ec, 0.55)]]));
+      c.save(); E(c, ix, iy, irx, iry); c.clip();
+      E(c, ix, iy - iry * 0.62, irx * 1.3, iry * 0.6); F(c, 'rgba(20,6,16,0.42)');               // 上半暗影
+      E(c, ix, iy + iry * 0.62, irx * 0.78, iry * 0.36); F(c, rg(c, ix, iy + iry * 0.66, 0, irx * 0.8, [[0, shade(ec, 0.78)], [1, 'rgba(255,255,255,0)']])); // 下缘反光
+      c.strokeStyle = shade(ec, -0.5); c.globalAlpha = 0.35; c.lineWidth = 0.9;
+      for (let i = 0; i < 9; i++) { const a = Math.PI * (0.15 + i * 0.0875); c.beginPath(); c.moveTo(ix + Math.cos(a) * irx * 0.45, iy + Math.sin(a) * iry * 0.45); c.lineTo(ix + Math.cos(a) * irx * 0.92, iy + Math.sin(a) * iry * 0.92); c.stroke(); }
+      c.globalAlpha = 1; c.restore();
+      E(c, ix, iy, irx, iry); c.strokeStyle = shade(ec, -0.68); c.lineWidth = 1.5; c.stroke();
+      E(c, ix, iy + 0.8, irx * 0.4, iry * 0.46); F(c, shade(ec, -0.8));                          // 瞳孔
       if (mode === 'star') { star(c, ix, iy, 7.5, '#fff8b0'); sparkle(c, ix - 5, iy - 7, 3.5); }
-      else { E(c, ix - rx * 0.32, iy - ry * 0.4, rx * 0.34, ry * 0.3); F(c, '#fff'); E(c, ix + rx * 0.36, iy + ry * 0.28, rx * 0.15, rx * 0.15); F(c, '#fff'); }
+      else {
+        c.save(); c.translate(ix - s * irx * 0.12 - irx * 0.28, iy - iry * 0.42); c.rotate(-0.45); E(c, 0, 0, irx * 0.42, iry * 0.27); F(c, '#fff'); c.restore();
+        E(c, ix + irx * 0.42, iy + iry * 0.36, irx * 0.17, irx * 0.17); F(c, '#fff');
+        sparkle(c, ix + irx * 0.3, iy - iry * 0.6, 2.4, 'rgba(255,255,255,0.9)');
+      }
     }
-    const lid = mode === 'half' || mode === 'angry' || mode === 'sly' || mode === 'proud';
-    let ly0 = 0, ly1 = 0;
+    const lid = half || mode === 'half' || mode === 'angry' || mode === 'sly' || mode === 'proud';
+    let la = 0, lb = 0;                                  // 内眼角 / 外眼角处的眼皮高度
     if (lid) {
-      const tilt = mode === 'angry' ? 7 : mode === 'half' ? 0 : -3;
-      ly0 = y - ry * (mode === 'half' ? 0.05 : 0.3) - side * tilt; ly1 = y - ry * (mode === 'half' ? 0.05 : 0.3) + side * tilt;
-      c.fillStyle = sp.skin; c.beginPath(); c.moveTo(x - rx - 3, y - ry - 3); c.lineTo(x + rx + 3, y - ry - 3); c.lineTo(x + rx + 3, side > 0 ? ly1 : ly0); c.lineTo(x - rx - 3, side > 0 ? ly0 : ly1); c.closePath(); c.fill();
+      const tilt = mode === 'angry' ? 7 : (mode === 'half' || half) ? 0 : -3, base = y - ry * ((mode === 'half' || half) ? 0.02 : 0.3);
+      la = base + tilt; lb = base - tilt;
+      c.fillStyle = sp.skin; c.beginPath(); c.moveTo(x - s * (rx + 4), y - ry - 4); c.lineTo(x + s * (rx + 4), y - ry - 4); c.lineTo(x + s * (rx + 4), lb); c.lineTo(x - s * (rx + 4), la); c.closePath(); c.fill();
     }
     c.restore();
-    c.strokeStyle = dark;
+    c.strokeStyle = dark; c.fillStyle = dark;
     if (lid) {
-      c.lineWidth = 4.5; c.beginPath(); c.moveTo(x - rx - 1, side > 0 ? ly0 : ly1); c.lineTo(x + rx + 1, side > 0 ? ly1 : ly0); c.stroke();
-      if (!sp.male) { c.lineWidth = 3; c.beginPath(); const ox = x + side * (rx + 1), oy = side > 0 ? ly1 : ly1; c.moveTo(ox, oy); c.lineTo(ox + side * 6, oy - 5); c.stroke(); }
-      c.lineWidth = 1.6; c.beginPath(); c.ellipse(x, y + 1, rx - 1, ry - 1, 0, Math.PI * 0.3, Math.PI * 0.7); c.stroke();
+      c.lineWidth = 4.6; c.beginPath(); c.moveTo(x - s * (rx + 1), la); c.quadraticCurveTo(x, (la + lb) / 2 - 2, x + s * (rx + 1.5), lb); c.stroke();
+      if (fem) { c.lineWidth = 2.6; c.beginPath(); c.moveTo(x + s * (rx + 1), lb); c.lineTo(x + s * (rx + 7), lb - 5); c.stroke(); }
     } else if (mode === 'stern') {
-      c.lineWidth = 4; c.beginPath(); c.moveTo(x - rx - 1, y - ry + 2 + side * 2); c.lineTo(x + rx + 1, y - ry + 2 - side * 2); c.stroke();
+      c.lineWidth = 4.2; c.beginPath(); c.moveTo(x - s * (rx + 1), y - ry + 3); c.quadraticCurveTo(x, y - ry - 1, x + s * (rx + 1.5), y - ry + 1 - 2); c.stroke();
     } else {
-      c.lineWidth = mode === 'kind' ? 3 : 4.5; c.beginPath(); c.ellipse(x, y, rx + 0.5, ry + 0.5, 0, Math.PI * 1.08, Math.PI * 1.92); c.stroke();
-      if (!sp.male && mode !== 'shock') { c.lineWidth = 3; c.beginPath(); const ox = x + side * (rx * 0.92), oy = y - ry * 0.45; c.moveTo(ox, oy); c.quadraticCurveTo(ox + side * 5, oy - 3, ox + side * 7, oy - 7); c.stroke(); c.beginPath(); c.moveTo(ox - side * 1, oy + 4); c.lineTo(ox + side * 6, oy + 1); c.stroke(); }
-      c.lineWidth = 1.6; c.beginPath(); c.ellipse(x, y + 1, rx - 1, ry - 1, 0, Math.PI * 0.3, Math.PI * 0.7); c.stroke();
+      lashTop(c, x, y, rx, ry, s); c.lineWidth = mode === 'kind' ? 3.2 : (fem ? 4.8 : 4); c.stroke();
+      if (fem && mode !== 'shock') { // 眼尾翘睫毛（实心小三角）+ 两根睫毛
+        const ox = x + s * (rx + 1.6), oy = y - ry * 0.4;
+        c.beginPath(); c.moveTo(ox - s * 4, oy - 3.2); c.quadraticCurveTo(ox + s * 5, oy - 4, ox + s * 8.5, oy - 9); c.quadraticCurveTo(ox + s * 4, oy + 0.5, ox - s * 1, oy + 1.8); c.closePath(); c.fill();
+        c.lineWidth = 1.8; c.beginPath(); c.moveTo(ox - s * 1, oy + 1); c.quadraticCurveTo(ox + s * 5, oy + 1, ox + s * 7.5, oy - 1.5); c.stroke();
+        c.lineWidth = 1.4; c.beginPath(); c.moveTo(x + s * rx * 0.35, y - ry * 1.02); c.lineTo(x + s * rx * 0.52, y - ry * 1.26); c.stroke();
+        c.strokeStyle = shade(sp.skin, -0.32); c.lineWidth = 1.3; c.beginPath(); c.moveTo(x - s * rx * 0.3, y - ry * 1.12); c.quadraticCurveTo(x + s * rx * 0.5, y - ry * 1.3, x + s * (rx + 0.5), y - ry * 0.82); c.stroke(); // 双眼皮
+      }
     }
+    // 下睫毛（外侧一小段）
+    c.strokeStyle = 'rgba(42,18,30,0.72)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x + s * rx * 0.05, y + ry * 0.98); c.quadraticCurveTo(x + s * rx * 0.7, y + ry * 0.9, x + s * (rx + 0.6), y + ry * 0.45); c.stroke();
+    if (fem) { c.strokeStyle = 'rgba(255,150,170,0.35)'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(x - s * rx * 0.4, y + ry * 1.12); c.quadraticCurveTo(x + s * rx * 0.3, y + ry * 1.2, x + s * rx * 0.9, y + ry * 0.9); c.stroke(); } // 卧蚕淡粉
   } else if (mode === 'happy' || mode === 'squint') {
-    c.strokeStyle = dark; c.lineWidth = mode === 'squint' ? 3.5 : 4.5;
+    c.strokeStyle = dark; c.lineWidth = mode === 'squint' ? 3.5 : 4.6;
     c.beginPath(); c.moveTo(x - 11, y + 4); c.quadraticCurveTo(x, y - 12, x + 11, y + 4); c.stroke();
-    if (!sp.male) { c.lineWidth = 2.5; c.beginPath(); c.moveTo(x + side * 11, y + 2); c.lineTo(x + side * 15, y - 2); c.stroke(); }
+    if (fem) { c.lineWidth = 2.4; c.beginPath(); c.moveTo(x + side * 11, y + 2); c.lineTo(x + side * 15.5, y - 2.5); c.stroke(); c.lineWidth = 1.6; c.beginPath(); c.moveTo(x + side * 8, y - 3); c.lineTo(x + side * 12, y - 7); c.stroke(); }
   } else if (mode === 'closed' || mode === 'sleepy') {
     c.strokeStyle = dark; c.lineWidth = 4;
     c.beginPath(); c.moveTo(x - 12, y - 1); c.quadraticCurveTo(x, y + 7, x + 12, y - 1); c.stroke();
-    if (!sp.male) { c.lineWidth = 2.5; c.beginPath(); c.moveTo(x + side * 11, y); c.lineTo(x + side * 15, y + 3); c.stroke(); }
+    if (fem) { c.lineWidth = 2.2; c.beginPath(); c.moveTo(x + side * 11, y); c.lineTo(x + side * 15.5, y + 3); c.stroke(); c.lineWidth = 1.5; for (const k of [-4, 3]) { c.beginPath(); c.moveTo(x + side * k, y + 4.5); c.lineTo(x + side * (k + 1), y + 8.5); c.stroke(); } }
   } else if (mode === 'cry') {
     c.strokeStyle = dark; c.lineWidth = 4.5;
     c.beginPath(); c.moveTo(x - side * 11, y - 7); c.lineTo(x + side * 7, y); c.lineTo(x - side * 11, y + 7); c.stroke();
@@ -222,45 +255,70 @@ function bangsPath(c, style) {
     c.quadraticCurveTo(58, -236, 22, -244); c.quadraticCurveTo(0, -248, -22, -244); c.quadraticCurveTo(-58, -236, -62, -200); c.closePath();
   }
 }
+function hairGrad(c, h, y0, y1) { return lg(c, 0, y0, 0, y1, [[0, shade(h, 0.2)], [0.45, h], [1, shade(h, -0.18)]]); }
 function drawHairBack(c, sp, t) {
   const h = sp.hair;
   if (sp.back === 'long') {
-    c.beginPath(); c.moveTo(-64, -222);
-    c.bezierCurveTo(-80, -170, -70, -126, -62 + Math.sin(t * 1.3) * 2, -100);
-    c.quadraticCurveTo(-50, -90, -40, -104); c.quadraticCurveTo(0, -96, 40, -104); c.quadraticCurveTo(50, -90, 62 + Math.sin(t * 1.3 + 1) * 2, -100);
-    c.bezierCurveTo(70, -126, 80, -170, 64, -222); c.closePath();
-    F(c, lg(c, 0, -220, 0, -90, [[0, h], [1, shade(h, 0.14)]]), OL, 3);
-    c.strokeStyle = shade(h, 0.28); c.lineWidth = 1.5; c.beginPath(); c.moveTo(-52, -170); c.quadraticCurveTo(-58, -130, -54, -104); c.moveTo(52, -170); c.quadraticCurveTo(58, -130, 54, -104); c.stroke();
+    const sw = Math.sin(t * 1.3) * 2.2, sw2 = Math.sin(t * 1.3 + 1) * 2.2;
+    const path = () => { c.beginPath(); c.moveTo(-64, -222);
+      c.bezierCurveTo(-82, -170, -72, -126, -64 + sw, -98);
+      c.quadraticCurveTo(-58 + sw, -90, -52 + sw, -100); c.quadraticCurveTo(-46, -92, -38, -104); c.quadraticCurveTo(0, -96, 38, -104); c.quadraticCurveTo(46, -92, 52 + sw2, -100); c.quadraticCurveTo(58 + sw2, -90, 64 + sw2, -98);
+      c.bezierCurveTo(72, -126, 82, -170, 64, -222); c.closePath(); };
+    path(); F(c, lg(c, 0, -220, 0, -92, [[0, shade(h, -0.08)], [0.6, h], [1, shade(h, 0.16)]]), OL, 3);
+    c.save(); path(); c.clip();
+    E(c, 0, -150, 44, 70); F(c, rg(c, 0, -150, 10, 70, [[0, shade(h, -0.35)], [1, 'rgba(0,0,0,0)']])); // 内层暗部
+    c.strokeStyle = shade(h, -0.32); c.lineWidth = 1.4;
+    [-56, -46, 46, 56].forEach(x => { c.beginPath(); c.moveTo(x * 0.92, -190); c.quadraticCurveTo(x * 1.06, -140, x + (x < 0 ? sw : sw2) * 0.8, -102); c.stroke(); });
+    c.strokeStyle = shade(h, 0.4); c.globalAlpha = 0.55; c.lineWidth = 2;
+    [-1, 1].forEach(s => { c.beginPath(); c.moveTo(s * 66, -196); c.quadraticCurveTo(s * 72, -150, s * 62, -112); c.stroke(); });
+    c.globalAlpha = 1; c.restore();
   } else if (sp.back === 'short') {
-    c.beginPath(); c.moveTo(-64, -220); c.bezierCurveTo(-80, -180, -72, -150, -56, -144); c.lineTo(56, -144); c.bezierCurveTo(72, -150, 80, -180, 64, -220); c.closePath(); F(c, h, OL, 3);
+    c.beginPath(); c.moveTo(-64, -220); c.bezierCurveTo(-80, -180, -72, -150, -56, -144); c.lineTo(56, -144); c.bezierCurveTo(72, -150, 80, -180, 64, -220); c.closePath(); F(c, hairGrad(c, h, -220, -144), OL, 3);
   } else if (sp.back === 'male') {
-    c.beginPath(); c.moveTo(-62, -214); c.bezierCurveTo(-70, -180, -64, -160, -50, -150); c.lineTo(50, -150); c.bezierCurveTo(64, -160, 70, -180, 62, -214); c.closePath(); F(c, h, OL, 3);
+    c.beginPath(); c.moveTo(-62, -214); c.bezierCurveTo(-70, -180, -64, -160, -50, -150); c.lineTo(50, -150); c.bezierCurveTo(64, -160, 70, -180, 62, -214); c.closePath(); F(c, hairGrad(c, h, -214, -150), OL, 3);
   }
-  E(c, 0, -214, 69, 62); F(c, h, OL, 3);
+  E(c, 0, -214, 69, 62); F(c, lg(c, 0, -276, 0, -152, [[0, shade(h, 0.16)], [0.5, h], [1, shade(h, -0.2)]]), OL, 3);
 }
 function drawHairFront(c, sp, t) {
   const h = sp.hair;
-  if (sp.hat) { bangsPath(c, 'slick'); F(c, h, OL, 3); return; }
+  if (sp.hat) { bangsPath(c, 'slick'); F(c, hairGrad(c, h, -268, -200), OL, 3); return; }
   if (sp.bangs === 'none') return;
   bangsPath(c, sp.bangs);
-  F(c, lg(c, 0, -272, 0, -196, [[0, shade(h, 0.12)], [1, h]]), OL, 3);
+  F(c, lg(c, 0, -274, 0, -196, [[0, shade(h, 0.24)], [0.35, shade(h, 0.06)], [0.8, h], [1, shade(h, -0.14)]]), OL, 3);
   c.save(); bangsPath(c, sp.bangs); c.clip();
-  c.strokeStyle = 'rgba(255,255,255,0.32)'; c.lineWidth = 3.5; c.lineCap = 'round';
-  c.lineWidth = 5; for (let i = -2; i <= 2; i++) { const a = Math.PI * 1.5 + i * 0.3; c.beginPath(); c.ellipse(0, -212, 50, 40, 0, a - 0.12, a + 0.12); c.stroke(); }
-  c.strokeStyle = shade(h, 0.32); c.lineWidth = 1.6;
-  for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * 18, -264); c.quadraticCurveTo(i * 20, -238, i * 22 + 2, -214); c.stroke(); }
-  c.restore();
+  // 发根暗部（让刘海有体积）
+  E(c, 0, -200, 70, 16); F(c, 'rgba(20,6,20,0.22)');
+  // 天使环：沿头型的一圈亮带，断成几段，下缘锯齿
+  const hl = sp.old ? shade(h, 0.5) : lg(c, -50, 0, 50, 0, [[0, shade(h, 0.4)], [0.5, '#b9b4e8'], [1, shade(h, 0.4)]]);
+  c.lineCap = 'round';
+  for (let i = -3; i <= 3; i++) { // 天使环：几段短亮弧，中间断开
+    const a = Math.PI * 1.5 + i * 0.21, w = 0.06 - Math.abs(i) * 0.005;
+    c.strokeStyle = hl; c.globalAlpha = 0.42 - Math.abs(i) * 0.05; c.lineWidth = 5 - Math.abs(i) * 0.5;
+    c.beginPath(); c.ellipse(0, -216, 52, 34, 0, a - w, a + w); c.stroke();
+    if (Math.abs(i) <= 1) { c.strokeStyle = '#fff'; c.globalAlpha = 0.35; c.lineWidth = 1.3; c.beginPath(); c.ellipse(0, -217.5, 52, 34, 0, a - w * 0.5, a + w * 0.3); c.stroke(); }
+  }
+  c.globalAlpha = 1;
+  // 发丝：暗线 + 细亮线
+  c.strokeStyle = shade(h, -0.38); c.lineWidth = 1.5;
+  for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(i * 14, -266); c.quadraticCurveTo(i * 17, -238, i * 19 + 2, -206); c.stroke(); }
+  c.strokeStyle = shade(h, 0.42); c.globalAlpha = 0.6; c.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * 18 + 6, -262); c.quadraticCurveTo(i * 21 + 7, -240, i * 23 + 8, -216); c.stroke(); }
+  c.globalAlpha = 1; c.restore();
   if (!sp.male && sp.bangs !== 'old' && sp.bangs !== 'slick') {
     [-1, 1].forEach(s => {
-      const sw = Math.sin(t * 1.6 + s) * 2;
-      c.beginPath(); c.moveTo(s * 60, -224); c.quadraticCurveTo(s * 72, -180, s * 62 + sw, -146);
-      c.quadraticCurveTo(s * 56, -160, s * 50, -176); c.quadraticCurveTo(s * 50, -200, s * 52, -222); c.closePath(); F(c, h, OL, 2.5);
+      const sw = Math.sin(t * 1.6 + s) * 2.4;
+      const p = () => { c.beginPath(); c.moveTo(s * 60, -226); c.bezierCurveTo(s * 74, -196, s * 70, -168, s * 63 + sw, -140);
+        c.quadraticCurveTo(s * 60 + sw, -150, s * 55 + sw * 0.6, -146); c.quadraticCurveTo(s * 51, -168, s * 50, -182); c.quadraticCurveTo(s * 49, -204, s * 52, -224); c.closePath(); };
+      p(); F(c, hairGrad(c, h, -226, -140), OL, 2.5);
+      c.save(); p(); c.clip(); c.strokeStyle = shade(h, -0.35); c.lineWidth = 1.3; c.beginPath(); c.moveTo(s * 56, -220); c.quadraticCurveTo(s * 61, -186, s * 58 + sw, -148); c.stroke();
+      c.strokeStyle = shade(h, 0.5); c.globalAlpha = 0.6; c.lineWidth = 1.6; c.beginPath(); c.moveTo(s * 64, -214); c.quadraticCurveTo(s * 67, -196, s * 64, -176); c.stroke(); c.restore();
     });
   }
 }
 
 /* ---------- 发髻与发饰 ---------- */
-function bun(c, x, y, r, h, ry) { E(c, x, y, r, ry || r); F(c, lg(c, x, y - r, x, y + r, [[0, shade(h, 0.2)], [1, h]]), OL, 3);
+function bun(c, x, y, r, h, ry) { E(c, x, y, r, ry || r); F(c, lg(c, x, y - r, x, y + r, [[0, shade(h, 0.3)], [0.5, h], [1, shade(h, -0.22)]]), OL, 3);
+  c.save(); c.strokeStyle = shade(h, 0.6); c.globalAlpha = 0.5; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); c.ellipse(x, y, r * 0.72, (ry || r) * 0.72, 0, Math.PI * 1.15, Math.PI * 1.45); c.stroke(); c.restore();
   c.strokeStyle = shade(h, 0.34); c.lineWidth = 1.8; c.beginPath(); c.arc(x - r * 0.1, y + r * 0.05, r * 0.55, Math.PI * 0.9, Math.PI * 2.1); c.stroke(); c.beginPath(); c.arc(x + r * 0.15, y - r * 0.1, r * 0.3, Math.PI * 1.2, Math.PI * 2.3); c.stroke(); }
 function bow(c, x, y, s, col, t, tails) {
   c.save(); c.translate(x, y); c.scale(s, s);
@@ -381,6 +439,38 @@ function drawProp(c, prop, t, x, y) {
 }
 A.drawProp = (c, prop, t, x, y) => drawProp(c, prop, t, x, y);
 
+/* ---------- 品级服饰（v2）：按身份加刺绣/海水江崖/云肩 ---------- */
+const RANK = A.RANK = { emperor: 'royal', huanghou: 'empress', taihou: 'empress', guifei: 'consort', jingtaifei: 'consort', lizhaoyi: 'pin', zhao: 'pin', ningpin: 'pin', me: 'pin', yuanzhu: 'pin' };
+function seaCliff(c, hw, y0, y1, cols) { // 海水江崖：下摆斜立水 + 浪花
+  const h = y1 - y0, n = 5;
+  for (let i = 0; i < n; i++) { c.fillStyle = cols[i % cols.length]; c.fillRect(-hw - 10, y0 + i * h / n, hw * 2 + 20, h / n + 0.5); }
+  c.strokeStyle = 'rgba(255,255,255,0.75)'; c.lineWidth = 1.2;
+  for (let x = -hw - 10; x < hw + 10; x += 7) { c.beginPath(); c.moveTo(x, y1); c.lineTo(x + 6, y0); c.stroke(); }
+  c.fillStyle = '#fffaf0'; c.strokeStyle = cols[0]; c.lineWidth = 1.5;
+  for (let x = -hw; x <= hw; x += 16) { c.beginPath(); c.arc(x, y0, 6, Math.PI, 0); c.arc(x + 4, y0 + 1, 3, 0, Math.PI, true); c.closePath(); c.fill(); c.stroke(); }
+}
+function goldBand(c, w, y, h, col) { c.fillStyle = col || '#e8b84a'; c.fillRect(-w, y, w * 2, h); c.strokeStyle = 'rgba(120,70,10,0.6)'; c.lineWidth = 1; c.beginPath(); c.moveTo(-w, y + 1.5); c.lineTo(w, y + 1.5); c.moveTo(-w, y + h - 1.5); c.lineTo(w, y + h - 1.5); c.stroke();
+  c.fillStyle = 'rgba(255,250,210,0.9)'; for (let x = -w + 6; x < w; x += 12) { E(c, x, y + h / 2, 1.6, 1.6); c.fill(); } }
+function cloudCollar(c, sp, t) { // 云肩：肩上一圈如意云头花边，金边 + 小花 + 流苏
+  const gold = '#e8b84a', base = shade(sp.outer, -0.12);
+  c.save(); c.translate(0, -150);
+  const N = 7, RX = 50, RY = 30;
+  const path = (k) => { c.beginPath(); c.moveTo(-RX * k, -4);
+    for (let i = 0; i < N; i++) { const a0 = Math.PI * (1 - i / N), a1 = Math.PI * (1 - (i + 1) / N), am = (a0 + a1) / 2;
+      const x1 = Math.cos(a1) * RX * k, y1 = Math.sin(a1) * RY * k - 4, xm = Math.cos(am) * (RX + 9) * k, ym = Math.sin(am) * (RY + 11) * k - 4;
+      c.quadraticCurveTo(xm - Math.sin(am) * 9 * k, ym + 2, xm, ym); c.quadraticCurveTo(xm + Math.sin(am) * 9 * k, ym + 2, x1, y1); }
+    c.lineTo(RX * k, -12); c.lineTo(-RX * k, -12); c.closePath(); };
+  path(1); F(c, lg(c, 0, -10, 0, 40, [[0, shade(base, 0.25)], [1, base]]), '#8a5a10', 2.6);
+  path(0.86); F(c, null, gold, 1.6);
+  for (let i = 0; i < N; i++) { const am = Math.PI * (1 - (i + 0.5) / N); flower(c, Math.cos(am) * 42, Math.sin(am) * 27 - 3, 3.6, '#fff3c0', '#e0344a'); }
+  for (let i = 0; i < N; i++) { const am = Math.PI * (1 - (i + 0.5) / N), px = Math.cos(am) * (RX + 9), py = Math.sin(am) * (RY + 11) - 4, sw = Math.sin(t * 2.2 + i) * 2;
+    if (Math.abs(px) < 22) continue; c.strokeStyle = '#e0344a'; c.lineWidth = 1.2; for (let k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(px, py); c.lineTo(px + k * 1.6 + sw, py + 11); c.stroke(); } E(c, px, py, 2.4, 2.4); F(c, '#f2c24d'); }
+  c.restore();
+}
+function silkShade(c, hw, y0, y1) { // 布料明暗：两侧暗、偏左上一道丝绸反光
+  c.fillStyle = lg(c, -hw, 0, hw, 0, [[0, 'rgba(70,20,40,0.2)'], [0.22, 'rgba(70,20,40,0)'], [0.72, 'rgba(70,20,40,0)'], [1, 'rgba(70,20,40,0.26)']]); c.fillRect(-hw - 12, y0, hw * 2 + 24, y1 - y0);
+  c.fillStyle = lg(c, -hw * 0.7, 0, -hw * 0.05, 0, [[0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,255,255,0.2)'], [1, 'rgba(255,255,255,0)']]); c.beginPath(); c.moveTo(-hw * 0.62, y0); c.lineTo(-hw * 0.22, y0); c.lineTo(0, y1); c.lineTo(-hw * 0.5, y1); c.closePath(); c.fill();
+}
 /* ---------- 身体 ---------- */
 function drawBody(c, sp, o) {
   const t = o.t, pose = o.pose || sp.pose || 'fold', plump = sp.plump ? 1.12 : 1, ghost = o.ghost;
@@ -396,7 +486,12 @@ function drawBody(c, sp, o) {
     c.save(); path(); c.clip();
     c.strokeStyle = shade(sp.skirt2, -0.18); c.lineWidth = 1.8;
     [-28, -10, 10, 28].forEach(x => { c.beginPath(); c.moveTo(x * 0.55, -90); c.quadraticCurveTo(x * 0.85, -50, x * 1.15, -12); c.stroke(); });
+    const rk = RANK[o.id];
+    silkShade(c, hw, -100, 4);
+    if (rk === 'royal' || rk === 'empress') seaCliff(c, hw, -40, -20, rk === 'royal' ? ['#3a6db5', '#f2f2f2', '#c0392b', '#f2c24d', '#2f9a7a'] : ['#2f9a7a', '#fff3e0', '#3a6db5', '#f2c24d', '#c0392b']);
+    else if (rk === 'consort' || rk === 'pin') goldBand(c, hw + 10, -38, rk === 'consort' ? 9 : 6, rk === 'consort' ? '#f2c24d' : shade(sp.trim, 0.25));
     c.fillStyle = sp.trim; c.beginPath(); c.moveTo(-90, -24); c.quadraticCurveTo(0, -12, 90, -24); c.lineTo(90, 10); c.lineTo(-90, 10); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(255,240,190,0.85)'; c.lineWidth = 1.3; c.beginPath(); c.moveTo(-90, -21); c.quadraticCurveTo(0, -9, 90, -21); c.stroke();
     drawHem(c, sp);
     if (sp.male) { c.fillStyle = sp.trim; c.fillRect(-7, -98, 14, 100); }
     c.restore();
@@ -405,6 +500,7 @@ function drawBody(c, sp, o) {
   const sw = 32 * plump;
   c.beginPath(); c.moveTo(-sw + 4, -150); c.quadraticCurveTo(-sw - 6, -148, -sw - 4, -128); c.lineTo(-sw - 2, -94); c.lineTo(sw + 2, -94); c.lineTo(sw + 4, -128); c.quadraticCurveTo(sw + 6, -148, sw - 4, -150); c.closePath();
   F(c, ghost ? 'rgba(242,246,255,0.96)' : lg(c, 0, -150, 0, -94, [[0, shade(sp.outer, 0.14)], [1, sp.outer]]), OL, 3);
+  if (!ghost) { c.save(); c.clip(); silkShade(c, sw + 6, -152, -92); c.restore(); }
   // 交领（右衽）
   c.beginPath(); c.moveTo(-14, -152); c.lineTo(10, -112); c.lineTo(16, -118); c.lineTo(-4, -152); c.closePath(); F(c, sp.inner, OL, 2);
   c.beginPath(); c.moveTo(14, -152); c.lineTo(-6, -118); c.lineTo(2, -112); c.lineTo(22, -150); c.closePath(); F(c, sp.trim, OL, 2);
@@ -424,7 +520,9 @@ function drawBody(c, sp, o) {
     c.strokeStyle = '#e0344a'; c.lineWidth = 1.2; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(6, 35); c.lineTo(6 + i * 1.6, 50); c.stroke(); }
     c.restore();
   }
+  const rk2 = RANK[o.id];
   drawArms(c, sp, o, pose, plump);
+  if (!ghost && (rk2 === 'empress' || rk2 === 'consort')) cloudCollar(c, sp, t);
 }
 function drawShawl(c, sp, o) {
   const t = o.t, ghost = o.ghost;
@@ -504,17 +602,23 @@ function drawHead(c, sp, o) {
   if (!o.skipBack) drawHairBack(c, sp, t);
   drawBunsBack(c, sp, t);
   [-1, 1].forEach(s => { E(c, s * 56, -192, 8, 11); F(c, sp.skin, OL, 2.5); E(c, s * 56, -192, 3.5, 6); F(c, shade(sp.skin, -0.12)); });
-  c.beginPath(); c.moveTo(-58, -210); c.bezierCurveTo(-60, -166, -38, -144, 0, -144); c.bezierCurveTo(38, -144, 60, -166, 58, -210); c.bezierCurveTo(56, -250, -56, -250, -58, -210);
-  F(c, lg(c, 0, -250, 0, -144, [[0, sp.skin], [1, shade(sp.skin, -0.05)]]), OL, 3);
+  const faceP = () => { c.beginPath(); c.moveTo(-58, -210); c.bezierCurveTo(-60, -166, -38, -144, 0, -144); c.bezierCurveTo(38, -144, 60, -166, 58, -210); c.bezierCurveTo(56, -250, -56, -250, -58, -210); };
+  faceP(); F(c, lg(c, 0, -250, 0, -144, [[0, sp.skin], [1, shade(sp.skin, -0.05)]]), OL, 3);
+  c.save(); faceP(); c.clip();
+  E(c, 40, -176, 34, 44); F(c, rg(c, 40, -176, 6, 44, [[0, 'rgba(200,110,110,0.13)'], [1, 'rgba(200,110,110,0)']])); // 侧脸阴影
+  E(c, -26, -222, 26, 18); F(c, rg(c, -26, -222, 2, 26, [[0, 'rgba(255,255,255,0.35)'], [1, 'rgba(255,255,255,0)']])); // 额头柔光
+  if (!sp.hat && sp.bangs !== 'none') { c.translate(2, 7); bangsPath(c, sp.bangs); F(c, shade(sp.skin, -0.13)); } // 刘海投在额头上的阴影
+  c.restore();
   if (sp.old) { c.strokeStyle = shade(sp.skin, -0.25); c.lineWidth = 1.6; [-1, 1].forEach(s => { c.beginPath(); c.moveTo(s * 34, -168); c.quadraticCurveTo(s * 30, -160, s * 22, -158); c.stroke(); c.beginPath(); c.moveTo(s * 42, -204); c.lineTo(s * 48, -208); c.moveTo(s * 42, -198); c.lineTo(s * 49, -199); c.stroke(); }); }
-  E(c, -34, -180, 11, 6); F(c, 'rgba(255,140,160,0.42)'); E(c, 34, -180, 11, 6); F(c, 'rgba(255,140,160,0.42)');
+  [-1, 1].forEach(sd => { E(c, sd * 34, -180, 15, 8.5); F(c, rg(c, sd * 34, -180, 1, 15, [[0, 'rgba(255,120,150,0.55)'], [0.6, 'rgba(255,140,165,0.3)'], [1, 'rgba(255,150,170,0)']]));
+    if (!sp.old) { E(c, sd * 34 + 6, -184, 2, 1.4); F(c, 'rgba(255,255,255,0.8)'); } });
   c.strokeStyle = 'rgba(230,90,120,0.5)'; c.lineWidth = 1.4; [-1, 1].forEach(s => { for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(s * 30 - 6 + i * 5, -177); c.lineTo(s * 30 - 3 + i * 5, -183); c.stroke(); } });
   if (sp.freckle) { c.fillStyle = 'rgba(190,120,90,0.55)'; [-1, 1].forEach(s => { E(c, s * 26, -189, 1.6, 1.6); c.fill(); E(c, s * 32, -191, 1.4, 1.4); c.fill(); E(c, s * 29, -186, 1.3, 1.3); c.fill(); }); }
   if (sp.mole) { E(c, 24, -164, 2.4, 2.4); F(c, '#4a3030'); }
   drawEye(c, -24, -196, -1, eyes, sp, face.look, face.lookY, o.blink);
   drawEye(c, 24, -196, 1, eyes, sp, face.look, face.lookY, o.blink);
   if (sp.glasses) { c.strokeStyle = '#8a6a2a'; c.lineWidth = 2.5; E(c, -24, -196, 17, 16); c.stroke(); E(c, 24, -196, 17, 16); c.stroke(); c.beginPath(); c.moveTo(-7, -198); c.quadraticCurveTo(0, -203, 7, -198); c.stroke(); c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = 2; c.beginPath(); c.moveTo(-32, -206); c.lineTo(-26, -210); c.moveTo(16, -206); c.lineTo(22, -210); c.stroke(); c.strokeStyle = '#c9a24d'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-41, -194); c.quadraticCurveTo(-48, -170, -40, -150); c.stroke(); }
-  c.fillStyle = shade(sp.skin, -0.22); E(c, 0, -182, 1.8, 1.4); c.fill();
+  c.fillStyle = shade(sp.skin, -0.24); E(c, 1, -181.5, 2, 1.4); c.fill(); c.fillStyle = 'rgba(255,255,255,0.7)'; E(c, -1, -185, 1.3, 1); c.fill();
   drawMouth(c, sp, face.mouth, o.talk);
   drawHairFront(c, sp, t);
   drawBrow(c, sp, brow);
@@ -542,8 +646,9 @@ A.drawChar = function (c, id, x, y, scale, o) {
   drawShawl(c, sp, Object.assign({}, o, { t }));
   c.save(); c.translate(0, -150); c.rotate(headRot); c.translate(0, 150); drawHairBack(c, sp, t); c.restore();
   c.save(); c.translate(0, -100); c.scale(1, 1 + (o.still ? 0 : Math.sin(t * 2.1 + ph) * 0.008)); c.translate(0, 100);
-  drawBody(c, sp, Object.assign({}, o, { t }));
+  drawBody(c, sp, Object.assign({}, o, { t, id: o.ghost || o.stone ? null : id }));
   c.restore();
+  if (!o.ghost) { E(c, 0, -148, 34, 7); F(c, 'rgba(110,50,60,0.2)'); } // 下巴在衣领上的投影
   c.save(); c.translate(0, -150); c.rotate(headRot); c.translate(0, 150);
   drawHead(c, sp, Object.assign({}, o, { t, skipBack: true, face: o.face || (o.ghost ? 'dead' : 'normal') }));
   c.restore();
