@@ -131,7 +131,11 @@ function noise(t, dur, vol, ft, freq, q, bus, f1) {
 
 /* ---------- 乐器 ---------- */
 const INST = {
-  zheng(m, t, len, vol, bus, o) { pluck(m, t, vol, bus, { dur: Math.min(2.4, 0.5 + len * 0.9), bright: 0.5, bend: o.bend, slideFrom: o.slide }); return t + Math.min(2.4, 0.5 + len * 0.9); },
+  zheng(m, t, len, vol, bus, o) { // 古筝：拨弦 + 指甲“嗒”的起音 + 长音揉弦（颤音）
+    const dur = Math.min(2.4, 0.5 + len * 0.9), src = pluck(m, t, vol, bus, { dur, bright: 0.5, bend: o.bend, slideFrom: o.slide });
+    if (vol > 0.2) noise(t, 0.018, vol * 0.18, 'bandpass', Math.min(6000, midiHz(m) * 6), 2.5, bus);
+    if (len >= 0.55 && !o.bend && src && Math.random() < 0.6) { const l = ctx.createOscillator(), lg2 = ctx.createGain(); l.frequency.value = 5.2; lg2.gain.setValueAtTime(0, t); lg2.gain.linearRampToValueAtTime(0.007, t + 0.35); l.connect(lg2); lg2.connect(src.playbackRate); l.start(t); l.stop(t + dur); }
+    return t + dur; },
   pipa(m, t, len, vol, bus, o) {
     if (len >= 0.6 && o.trem) { const n = Math.min(7, Math.floor(len / 0.075)); for (let i = 0; i < n; i++) pluck(m, t + i * 0.075, vol * (0.85 - i * 0.06), bus, { dur: 0.35, bright: 0.72, buf: 1.2, lp: 4200 }); return t + len; }
     pluck(m, t, vol * 1.05, bus, { dur: Math.min(1.1, 0.35 + len * 0.6), bright: 0.72, buf: 1.2, lp: 4500, bend: o.bend }); return t + Math.min(1.1, 0.35 + len * 0.6);
@@ -361,8 +365,8 @@ AU.stopMusic = function () { if (track && ctx) { track.gain.gain.setTargetAtTime
 AU.state = function () { return { ctx: ctx ? ctx.state : 'none', mood: AU.mood, track: track && track.mood, queued: queue.length, voices: voices.length, duck: duckG ? duckG.gain.value : null, music: musicBus ? musicBus.gain.value : null, cfg: Object.assign({}, AU.cfg), debug: Object.assign({}, AU.debug) }; };
 
 /* ---------- 音效 ---------- */
-const STING = { death: [0.3, 1.6], gong: [0.45, 1.6], fanfare: [0.4, 2.2], scream: [0.4, 1], stamp: [0.6, 0.6], burp: [0.5, 1], splash: [0.6, 0.9] };
-AU.sfx = function (name) { try { sfx0(name); } catch (e) { /* 音效失败不能影响剧情 */ } };
+const STING = { deathSting: [0.3, 3.2], chapter: [0.4, 2.4], stampBig: [0.5, 0.6], death: [0.3, 1.6], gong: [0.45, 1.6], fanfare: [0.4, 2.2], scream: [0.4, 1], stamp: [0.6, 0.6], burp: [0.5, 1], splash: [0.6, 0.9] };
+AU.sfx = function (name) { try { sfx0(name); } catch (e) { /* 音效失败不能影响剧情 */ } try { const F = P.ART && P.ART.FX; if (F && F.onSfx) F.onSfx(name); } catch (e) {} };
 function sfx0(name) {
   if (!ctx || ctx.state !== 'running' || AU.cfg.sfx <= 0) return;
   if (P.UI && P.UI.skip) return; // 快进时不放音效/插曲（音乐照常）
@@ -392,6 +396,16 @@ function sfx0(name) {
     case 'thud': tone('sine', 140, 40, t, 0.3, 0.6); noise(t, 0.15, 0.3, 'lowpass', 500); break;
     case 'fanfare': [0, 4, 7, 12].forEach((d, i) => pluck(67 + d, t + i * 0.12, 0.45, sfxBus, { dur: 1.4 })); setTimeout(() => AU.sfx('gong'), 500); break;
     case 'tick': tone('sine', 1500, 1500, t, 0.03, 0.08); break;
+    case 'choose': pluck(79, t, 0.3, sfxBus, { dur: 0.9, rev: true }); pluck(86, t + 0.06, 0.28, sfxBus, { dur: 1.1, rev: true }); tone('sine', 2093, null, t + 0.06, 0.5, 0.04, sfxBus, { a: 0.003 }); break;
+    case 'brush': noise(t, 0.32, 0.09, 'bandpass', 500, 0.9, sfxBus, 2600); break;
+    case 'chapter': [1, 1.48, 2.1, 2.76].forEach((r, i) => tone('sine', 98 * r, 96 * r, t, 2.8 - i * 0.4, 0.26 / (i + 1), sfxBus, { a: 0.01, rev: true })); noise(t, 0.4, 0.12, 'lowpass', 400);
+      [0, 2, 4, 7, 9, 12, 14, 16].forEach((d, i) => pluck(62 + d, t + 0.35 + i * 0.055, 0.22, sfxBus, { dur: 1.4, rev: true })); tone('sine', 150, 55, t + 0.8, 0.4, 0.3); break;
+    case 'deathSting': { // 喜剧式“寄了”：木鱼咚咚 → 滑哨下坠 → 琵琶轮指三连降 → 远处一声锣
+      tone('sine', 520, 480, t, 0.12, 0.38); tone('sine', 1040, 900, t, 0.05, 0.08); tone('sine', 470, 430, t + 0.2, 0.12, 0.34);
+      const o = tone('sine', 1500, 260, t + 0.42, 0.62, 0.11, sfxBus, { a: 0.02 }); const l = ctx.createOscillator(), lg2 = ctx.createGain(); l.frequency.value = 9; lg2.gain.value = 40; l.connect(lg2); lg2.connect(o.frequency); l.start(t + 0.42); l.stop(t + 1.1);
+      [[64, 0], [62, 0.32], [57, 0.64]].forEach(([m, d], k) => { const n = k === 2 ? 9 : 5; for (let i = 0; i < n; i++) pluck(m, t + 1.1 + d + i * 0.06, 0.24 * (1 - i / (n + 2)), sfxBus, { dur: 0.35, bright: 0.72, buf: 1.2, lp: 4200, bend: k === 2 && i === n - 1 ? -0.06 : 0 }); });
+      [1, 1.48, 2.1].forEach((r, i) => tone('sine', 98 * r, 94 * r, t + 2.0, 2.2 - i * 0.5, 0.16 / (i + 1), sfxBus, { a: 0.01, rev: true })); break; }
+    case 'stampBig': tone('sine', 95, 38, t, 0.28, 0.75); noise(t, 0.16, 0.7, 'lowpass', 380); noise(t, 0.035, 0.32, 'highpass', 2800); noise(t + 0.02, 0.5, 0.08, 'bandpass', 900, 0.7, AU.rev || sfxBus); break;
     case 'spill': noise(t, 0.4, 0.35, 'lowpass', 1200, 0.8, sfxBus, 300); tone('sine', 700, 300, t, 0.2, 0.12); break;
   }
 }

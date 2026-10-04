@@ -262,7 +262,7 @@ A.drawBG = function (c, name, W, H, t) {
   let cv = cache[key];
   if (!cv) {
     cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    (BG[name] || BG.courtyard)(cv.getContext('2d'), W, H);
+    const bx = cv.getContext('2d'); (BG[name] || BG.courtyard)(bx, W, H); if (A.FX && A.FX.bake) A.FX.bake(bx, name, W, H);
     const keys = Object.keys(cache); if (keys.length > 14) delete cache[keys[0]];
     cache[key] = cv;
   }

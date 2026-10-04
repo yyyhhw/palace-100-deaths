@@ -71,6 +71,7 @@ function draw(c, d, W, H, S, t) {
   for (let i = -1; i < W / 220 + 2; i++) { const x = i * 220 - off; c.fillStyle = U.lg(c, x, 0, x + 34, 0, [[0, '#9e2f2f'], [0.5, '#d8573f'], [1, '#9e2f2f']]); c.fillRect(x, H * 0.16, 34, H * 0.56); A.lantern(c, x + 110, H * 0.25, H / 900, t, false);
     c.save(); c.globalAlpha = 0.5; U.flower(c, x + 110, H * 0.5, 10, '#ffd9e4', '#fff'); c.restore(); }
   c.fillStyle = '#d9c6a3'; c.fillRect(0, H * 0.72, W, H * 0.28); c.strokeStyle = 'rgba(120,90,60,0.25)'; c.lineWidth = 2; for (let i = -1; i < W / 80 + 2; i++) { const x = i * 80 - (S.t * 140) % 80; c.beginPath(); c.moveTo(x, H * 0.72); c.lineTo(x - 40, H); c.stroke(); }
+  if (A.FX) A.FX.miniBack(c, 'yonghe_yard', W, H, t);
   // 终点的桂嬷嬷
   if (S.prog > 0.7) { const k = (S.prog - 0.7) / 0.3; A.drawChar(c, S.who, W * (1.15 - k * 0.35), H * 0.92, H / 520, { t, face: S.splash > 0 ? 'angry' : 'normal' }); }
   // 主角（端托盘）
@@ -96,6 +97,7 @@ function draw(c, d, W, H, S, t) {
   c.strokeStyle = U.OL; c.lineWidth = 4; c.beginPath(); c.moveTo(gx, gy + gr * 0.6); c.lineTo(gx + Math.cos(na) * (gr + 10), gy + gr * 0.6 + Math.sin(na) * (gr + 10)); c.stroke();
   U.E(c, gx + Math.cos(na) * (gr + 12), gy + gr * 0.6 + Math.sin(na) * (gr + 12), 9, 9); U.F(c, Math.abs(S.th) > 0.35 ? '#e2577e' : '#f2c24d', U.OL, 2.5);
   c.restore();
+  if (A.FX) A.FX.miniFront(c, 'yonghe_yard', W, H, t);
   if (S.evT > 0) { c.save(); c.globalAlpha = Math.min(1, S.evT * 2); c.font = `bold ${Math.round(Math.min(W, H) * 0.06)}px "Noto Serif CJK SC", serif`; c.textAlign = 'center'; c.lineWidth = 6; c.strokeStyle = '#fff'; c.strokeText(S.ev, W / 2, H * 0.4); c.fillStyle = '#c0392b'; c.fillText(S.ev, W / 2, H * 0.4); c.restore();
     if (S.ev[0] === '一') { for (let i = 0; i < 6; i++) { c.save(); c.translate(((t * 400 + i * 120) % (W + 100)) - 50, H * (0.3 + i * 0.07)); c.rotate(t * 4 + i); U.E(c, 0, 0, 8, 4); U.F(c, '#7cc48a'); c.restore(); } } }
   if (S.cat >= 0) A.drawCat(c, W * (1.1 - S.cat * 1.3), H * 0.96, H / 900, { t, run: true, flip: false });

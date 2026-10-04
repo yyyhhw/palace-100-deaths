@@ -80,7 +80,7 @@ document.addEventListener('keydown', e => {
 
 /* ---------- 过场 ---------- */
 UI.transition = async function (kind, mid) {
-  const f = $('#fader'); f.className = 'show ' + (kind || 'fade'); const d = UI.skip ? 40 : 260;
+  const f = $('#fader'); f.className = 'show ' + (kind || 'fade'); const d = UI.skip ? 40 : 260; if (!UI.skip && kind !== 'cut') AU.sfx('brush');
   await sleep(kind === 'cut' ? 0 : d); mid && mid(); await sleep(UI.skip ? 10 : 60); f.className = kind || 'fade'; await sleep(kind === 'cut' ? 0 : d);
 };
 const NUM = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
@@ -96,7 +96,7 @@ UI.dayCard = function (day, time, date) {
 UI.chapterCard = function (title, sub) {
   return new Promise(res => {
     const d = $('#chapterCard'); d.querySelector('.ct').textContent = title; d.querySelector('.cs').textContent = sub || '';
-    show('#chapterCard'); AU.sfx('gong');
+    show('#chapterCard'); AU.sfx('chapter');
     let done = false; const fin = () => { if (done) return; done = true; hide('#chapterCard'); setTimeout(res, 300); };
     d.onclick = fin; setTimeout(fin, UI.skip ? 600 : 2600);
   });
@@ -145,7 +145,13 @@ UI.say = function (who, text, st, my, node, key) {
       else if (UI.auto) me.autoT = setTimeout(() => autoAdv(me), 1100 + chars.length * 55); };
     sayState.finish = finishType;
     if (!speed || UI.skip) { finishType(); return; }
-    const tick = () => { if (!sayState || sayState.res !== res) return; if (i >= chars.length) { finishType(); return; } i += 1; tx.innerHTML = esc(chars.slice(0, i).join('')).replace(/\n/g, '<br>'); if (i % 3 === 0) AU.sfx('tick'); setTimeout(tick, speed); };
+    // 逐字浮现：先把整句排好版（不会跳行），再一个个点亮；标点处稍停，读起来有呼吸感
+    tx.innerHTML = chars.map(ch => ch === '\n' ? '<br>' : '<span class="ch">' + esc(ch) + '</span>').join('');
+    const spans = tx.querySelectorAll('.ch'); let si = 0;
+    const PAUSE = { '，': 3, '、': 2, '。': 5, '！': 5, '？': 5, '…': 2, '—': 1, '；': 3, '：': 2, '~': 2, '～': 2 };
+    const tick = () => { if (!sayState || sayState.res !== res) return; if (i >= chars.length) { finishType(); return; }
+      const ch = chars[i]; i += 1; if (ch !== '\n' && spans[si]) spans[si++].classList.add('on'); if (i % 3 === 0) AU.sfx('tick');
+      setTimeout(tick, speed * (1 + (PAUSE[ch] || 0) * 0.9)); };
     tick();
   });
 };
@@ -181,7 +187,7 @@ UI.choose = function (opts, st, my) {
       else if (curNode && G.wasPicked(curNode, o)) html += '<span class="gb picked">✓ 已选</span>';
       if (o.hint) html += `<small>${esc(G.render(o.hint))}</small>`;
       b.innerHTML = html; b.dataset.idx = idx;
-      b.onclick = e => { e.stopPropagation(); if (box.dataset.lock) return; box.dataset.lock = '1'; b.classList.add('picked'); AU.sfx('stamp'); setTimeout(() => { UI.hideChoices(); res(o); }, 260); };
+      b.onclick = e => { e.stopPropagation(); if (box.dataset.lock) return; box.dataset.lock = '1'; b.classList.add('picked'); box.classList.add('chosen'); AU.sfx('choose'); setTimeout(() => { UI.hideChoices(); res(o); }, 300); };
       box.appendChild(b);
     });
     box.className = 'show' + (list.length >= 5 ? ' many' : ''); delete box.dataset.lock;
@@ -261,9 +267,9 @@ UI.deathCard = function (d, isNew, mem, gf) {
     show('#deathOv');
     if (cardLoop) cardLoop();
     cardLoop = loopCanvas(ov.querySelector('canvas'), (c, w, h, t) => A.drawDeathScene(c, w, h, d.id, t));
-    AU.sfx('gong');
+    AU.sfx('deathSting');
     requestAnimationFrame(() => ov.classList.add('open'));
-    setTimeout(() => { stamp.classList.add('slam'); AU.sfx('stamp'); G.stage.shake = 0.4; const sc = ov.querySelector('.scroll'); sc.classList.add('shk'); setTimeout(() => sc.classList.remove('shk'), 400); }, 900);
+    setTimeout(() => { stamp.classList.add('slam'); AU.sfx('stampBig'); G.stage.shake = 0.55; try { if (A.FX) A.FX.flash('rgba(255,240,220,0.55)'); if (navigator.vibrate) navigator.vibrate([18, 40, 30]); } catch (e) {} const sc = ov.querySelector('.scroll'); sc.classList.add('shk'); setTimeout(() => sc.classList.remove('shk'), 400); }, 900);
     setTimeout(() => AU.speak(G.render(d.roast || d.title)), 650);
     ov.querySelector('.dspeak').onclick = e => { e.stopPropagation(); AU.cfg.speech = true; G.meta.settings.speech = true; AU.speak(G.render(d.roast || d.title)); UI.syncMute(); };
     ov.querySelector('.dmute').onclick = e => { e.stopPropagation(); AU.cfg.speech = !AU.cfg.speech; G.meta.settings.speech = AU.cfg.speech; if (!AU.cfg.speech) AU.stopSpeak(); UI.syncMute(); G.save(); };
