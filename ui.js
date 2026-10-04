@@ -334,8 +334,8 @@ let galLoop = null;
 UI.gallery = function (tab) {
   const ov = $('#galleryOv'); tab = tab || 'death';
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
-  const ne = Object.keys(G.meta.endings || {}).filter(k => P.ENDING_MAP && P.ENDING_MAP[k] && !P.ENDING_MAP[k].extra).length;
-  ov.querySelector('.gcount').innerHTML = `已收录 <b>${n}</b> / 100　番外 <b>${P.DEATHS.filter(d => d.extra && G.meta.deaths[d.id]).length}</b> / ${P.DEATHS.filter(d => d.extra).length}　记忆 <b>${Object.keys(G.meta.mems).length}</b> / 24` + (P.ENDINGS ? `　结局 <b>${ne}</b> / ${P.ENDINGS.filter(e => !e.extra).length}` : '');
+  const ne = Object.keys(G.meta.endings || {}).filter(k => P.ENDING_MAP && P.ENDING_MAP[k]).length;
+  ov.querySelector('.gcount').innerHTML = `已收录 <b>${n}</b> / 100　番外 <b>${P.DEATHS.filter(d => d.extra && G.meta.deaths[d.id]).length}</b> / ${P.DEATHS.filter(d => d.extra).length}　记忆 <b>${Object.keys(G.meta.mems).length}</b> / 24` + (P.ENDINGS ? `　结局 <b>${ne}</b> / ${P.ENDINGS.length}` : '');
   $$('#galleryOv .tab').forEach(t => { t.classList.toggle('on', t.dataset.tab === tab); t.onclick = () => { AU.sfx('page'); UI.gallery(t.dataset.tab); }; });
   const grid = ov.querySelector('.ggrid'); grid.innerHTML = ''; grid.className = 'ggrid ' + tab;
   if (tab === 'death') {
@@ -394,7 +394,7 @@ let finLoop = null;
 const CREDITS = () => [
   ['', '《穿越回后宫的100种死法》'], ['主演', '{宫名}（{现代名}）'], ['死亡次数', '{死} 次（一种不少，一次不亏）'],
   ['贴身宫女', '小桃（爱吃，胆小，最勇敢）'], ['首席情报官', '小安子（已戒赌）'], ['御前侍卫', '陆峥（不喝甜的；少糖可以）'],
-  ['太医', '温太医（和他舅舅不是一家人）'], ['浣衣局分局长', '阿芸'], ['冷宫农业顾问', '静太妃'], ['天气预报', '玄机子（只报雨）'],
+  ['太医', '温太医（和温尚书不是一家人）'], ['浣衣局分局长', '阿芸'], ['冷宫农业顾问', '静太妃'], ['天气预报', '玄机子（只报雨）'],
   ['大反派', '宁嫔（影后）'], ['幕后黑手', '温尚书（以及他的两只帽翅）'], ['特别出演', '太后（2008 届）'],
   ['奈何桥后勤', '孟婆（汤已凉）'], ['道具', '御膳房 · 鸭子“大将军”（已越狱）'], ['白菜指导', '小华、小宁'], ['猫', '糯米（只认小鱼干）'],
   ['鸣谢', '每一碗没喝下去的孟婆汤'], ['', '本片所有死法均为卡通演出，<br>没有任何一位小主在拍摄中受到真正的伤害。'], ['', '—— 完 ——'],
@@ -407,11 +407,11 @@ UI.ending = function (id, st) {
     if (id !== 'E_dream') G.meta.clear.ch5 = G.meta.clear.ch5 || { at: Date.now(), life: G.meta.lives, rank: G.run && G.run.flags.rank, ending: id };
     G.save();
     let ov = $('#finOv'); if (!ov) { ov = el('div', 'ov'); ov.id = 'finOv'; $('#app').appendChild(ov); }
-    const n = G.uniqueDeaths(), ne = Object.keys(em).filter(k => P.ENDING_MAP[k] && !P.ENDING_MAP[k].extra).length;
+    const n = G.uniqueDeaths(), ne = Object.keys(em).filter(k => P.ENDING_MAP[k]).length;
     const cred = CREDITS().map(([a, b]) => `<p>${a ? '<b>' + esc(a) + '</b>　' : ''}${G.render(b)}</p>`).join('');
     ov.innerHTML = `<div class="fcard"><canvas></canvas><div class="fside"><div class="fbody"><div class="fkind">${esc(e.kind)}结局${isNew ? ' · 🆕 首次达成' : ''}</div><div class="ftitle">【${esc(e.title)}】</div>
       <p class="fline">${esc(G.render(st.line || e.line))}</p>
-      <div class="fstat">第 <b>${G.meta.lives}</b> 世 · 累计死亡 <b>${G.meta.totalDeaths}</b> 次 · 图鉴 <b>${n}</b>/100 · 记忆 <b>${Object.keys(G.meta.mems).length}</b>/24 · 结局 <b>${ne}</b>/${P.ENDINGS.filter(x => !x.extra).length}</div>
+      <div class="fstat">第 <b>${G.meta.lives}</b> 世 · 累计死亡 <b>${G.meta.totalDeaths}</b> 次 · 图鉴 <b>${n}</b>/100 · 记忆 <b>${Object.keys(G.meta.mems).length}</b>/24 · 结局 <b>${ne}</b>/${P.ENDINGS.length}</div>
       ${st.cont ? '' : `<div class="fcred"><div class="roll">${cred}</div></div>`}</div>
       <div class="fbtns">${st.cont ? `<button class="btn pri fcont">${esc(st.cont)}</button>` : `<button class="btn pri fgal">🏁 结局画廊</button><button class="btn freplay">🔁 重玩第五章</button>${n >= 100 ? '<button class="btn fegg">📷 片尾彩蛋</button>' : ''}<button class="btn ftitleb">🏯 回到标题</button>`}</div></div></div>`;
     if (finLoop) finLoop(); finLoop = loopCanvas(ov.querySelector('canvas'), (c, w, h, t) => A.drawEnding(c, w, h, id, t));
@@ -465,8 +465,8 @@ UI.title = function () {
   const has = G.run && G.run.node;
   ov.querySelector('.tcont').style.display = has ? '' : 'none';
   const n = Object.keys(G.meta.deaths).filter(k => !P.DEATH_MAP[k].extra).length;
-  const nE = Object.keys(G.meta.endings || {}).filter(k => P.ENDING_MAP && P.ENDING_MAP[k] && !P.ENDING_MAP[k].extra).length;
-  ov.querySelector('.tinfo').innerHTML = (n >= 100 ? '🏆 百死不悔 · ' : '') + (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (nE ? ` · 🏁 结局 ${nE}/10` : '') + (G.meta.clear.ch1 ? ' · 🏅 ' + G.CH_ORDER.slice(1).filter(k => G.meta.clear[k]).map(k => G.CH_NAME[k]).join('、') + '已通关' : '');
+  const nE = Object.keys(G.meta.endings || {}).filter(k => P.ENDING_MAP && P.ENDING_MAP[k]).length;
+  ov.querySelector('.tinfo').innerHTML = (n >= 100 ? '🏆 百死不悔 · ' : '') + (G.meta.totalDeaths ? `第 ${G.meta.lives} 世 · 图鉴 ${n}/100` : '一百种死法，总有一种适合你') + (nE ? ` · 🏁 结局 ${nE}/${P.ENDINGS ? P.ENDINGS.length : 11}` : '') + (G.meta.clear.ch1 ? ' · 🏅 ' + G.CH_ORDER.slice(1).filter(k => G.meta.clear[k]).map(k => G.CH_NAME[k]).join('、') + '已通关' : '');
   const tch = ov.querySelector('.tchap'); if (tch) { tch.style.display = G.meta.clear.ch1 ? '' : 'none'; tch.onclick = () => { AU.unlock(); AU.sfx('page'); UI.chapterSelect(); }; }
   ov.querySelector('.tnew').onclick = async () => {
     AU.unlock(); AU.sfx('select');

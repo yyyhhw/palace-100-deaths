@@ -384,7 +384,7 @@ body.land #gameOv.zuoci .zpeople{grid-template-columns:repeat(3,1fr)}
 .fcred{height:150px;overflow:hidden;position:relative;border:2px dashed #c08a5a;border-radius:12px;background:#fffaf0;margin-top:8px;mask-image:linear-gradient(transparent,#000 18%,#000 82%,transparent);-webkit-mask-image:linear-gradient(transparent,#000 18%,#000 82%,transparent)}
 .fcred .roll{position:absolute;left:0;right:0;text-align:center;font-size:13px;line-height:1.9;animation:roll 34s linear infinite}
 .fcred .roll b{color:var(--red2)}
-@keyframes roll{from{transform:translateY(150px)}to{transform:translateY(-100%)}}
+@keyframes roll{from{transform:translateY(40px)}to{transform:translateY(-100%)}}
 .fbtns{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 12px}.fbtns .btn{flex:1 1 40%;min-height:42px}
 body.land .fcard{width:min(860px,100%);flex-direction:row}
 body.land .fcard canvas{width:50%;height:auto;border-bottom:0;border-right:3px solid #5a3a10}
