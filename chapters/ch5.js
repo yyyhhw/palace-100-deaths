@@ -601,13 +601,23 @@ N.c5_fireAfter = [
   G => { const r = G.flag('game_huozai') || {}; if (r.rescued) G.run.flags.taoSafe = true; else if (G.flag('_taoInFire')) G.run.flags.taoHurt = true; delete G.run.flags._taoInFire; return null; },
   { bg: 'courtyard', music: 'night', cast: [['me', 'sweat', 'L']] },
   { s: 'n', t: '你跌坐在东门外的石阶上，脸上全是灰，头发焦了一缕。' },
-  { if: G => G.flag('taoSafe') && !G.flag('taoHurt'), then: [
+  { if: G => G.flag('taoSafe') && !(G.flag('game_huozai') || {}).rescued, then: [
+    { enter: 'xiaotao', face: 'panic', pos: 'R' },
+    { s: 'xiaotao', f: 'panic', t: '（披着太后的斗篷，一路从慈宁宫跑过来）小主——！！您还活着吗！活着就应一声！' },
+    { s: 'me', f: 'sweat', t: '……活着。就是头发焦了一缕。' },
+    { s: 'xiaotao', f: 'cry', t: '呜呜呜还好奴婢没在！不对——奴婢应该在的！奴婢应该替您挡着的！' },
+    { s: 'me', f: 'smile', t: '你在的话，现在就得两个人一起画眉毛了。太后那儿的点心好吃吗？' },
+    { s: 'xiaotao', f: 'think', t: '……好吃。奴婢给您揣了两块回来。（掏出两块被压扁的枣泥糕）' },
+    add('trust_tao', 10),
+  ] },
+  { if: G => G.flag('taoSafe') && !!(G.flag('game_huozai') || {}).rescued, then: [
     { enter: 'xiaotao', face: 'cry', pos: 'R' },
     { s: 'xiaotao', f: 'cry', t: '小主！小主您没事吧！呜呜呜奴婢的眉毛——奴婢的眉毛烧没了一半！' },
     { s: 'me', f: 'smile', t: '……没事，画上就好。我给你画，画成柳叶眉。' },
     { s: 'xiaotao', f: 'cry', t: '要、要画得比贵妃的还好看……' },
     add('trust_tao', 10),
-  ], else: [
+  ] },
+  { if: G => !G.flag('taoSafe'), then: [
     { s: 'n', t: '陆峥带着侍卫冲进了火场。片刻之后，他背着昏迷的小桃冲了出来。' },
     { enter: 'luzheng', face: 'sweat', pos: 'R' },
     { s: 'luzheng', f: 'normal', t: '活着。烟呛的，腿上烫了一块。温太医说，要躺半个月。' },
