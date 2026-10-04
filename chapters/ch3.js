@@ -516,13 +516,13 @@ function washNode(i) {
           { s: 'n', t: '眼前一黑。你一头栽进了皂角水里，冒了一串泡泡。' },
         ], death: '058' },
         add('ayun', 15),
-        { if: G => G.flag('washTotal') === 2 && G.flag('clothScrap') && !G.flag('clothId'), then: [
+        { if: G => G.flag('washTotal') >= 2 && G.flag('clothScrap') && !G.flag('clothId'), then: [
           { s: 'n', t: '你装作不经意，把那角布料亮给阿芸看。' },
           { s: 'ayun', f: 'shock', t: '这是云纹软烟罗！今年内务府只进了两匹，全给了……永和宫。' },
           { s: 'os', f: 'think', t: '永和宫。宁嫔。果然是她。' },
           { set: { clothId: true } }, { mem: 'M10' },
         ] },
-        { if: G => G.flag('washTotal') === 3, then: [
+        { if: G => G.flag('washTotal') >= 3 && !G.flag('cuilvWhere'), then: [
           { s: 'ayun', f: 'think', t: '你打听翠缕？……她三天前半夜来浣衣局，求我把一件沾了香灰的衣裳洗了。哭得可凶了。' },
           { s: 'ayun', t: '我猜她躲在御花园西边那个废了的绛雪轩里。那儿晚上有侍卫巡逻，你可小心。' },
           { set: { cuilvWhere: true } }, add('intel', 1),
@@ -556,7 +556,7 @@ N.c3_escape = [
     { t: '“小桃以前也被人要挟过。我帮过她，也能帮你。”', need: G => G.flag('taoSaved'), then: [{ s: 'cuilv', f: 'cry', t: '小桃……她跟我说过你。我信你。' }, { set: { cuilvWitness: 'tao' } }, add('trust_tao', 5)] },
   ] },
   { s: 'os', f: 'star', t: '证人，到手！' },
-  { go: 'c3_d69' },
+  G => ({ go: G.flag('graceUsed') ? 'c3_back' : 'c3_d69' }),
 ];
 
 /* ---------------- 第 69 天 · 慎刑司对质（Boss） ---------------- */
@@ -597,7 +597,13 @@ N.c3_dark = [
 ];
 const BOSS = [['me', 'normal', 'LL'], ['ningpin', 'smile', 'L'], ['huanghou', 'normal', 'C'], ['momo', 'angry', 'R', { pose: 'ruler', prop: 'ruler' }], ['guifei', 'angry', 'RR']];
 const showOpts = [
-  { t: '📜 出示娃娃身上的布料：云纹软烟罗', need: G => G.flag('clothId') && !G.flag('shownCloth'), set: { shownCloth: true }, then: [
+  { t: '📜 出示永和宫送洗的边角料：云纹软烟罗', need: G => G.flag('clothAlt') && G.flag('clothId') && !G.flag('shownCloth'), set: { shownCloth: true }, then: [
+    { s: 'me', f: 'angry', t: '这块边角料，是永和宫上个月送去浣衣局洗的。请娘娘对一对——和娃娃身上的料子，是不是一模一样？' },
+    { face: { ningpin: 'shock' } },
+    { s: 'huanghou', f: 'think', t: '……云纹软烟罗。刘嬷嬷，去内务府查账。' },
+    { s: 'n', t: '一炷香后，刘嬷嬷回来，冲皇后点了点头。今年内务府只进了两匹，全送去了永和宫。' },
+  ], go: 'c3_proof' },
+  { t: '📜 出示娃娃身上的布料：云纹软烟罗', need: G => G.flag('clothId') && !G.flag('clothAlt') && !G.flag('shownCloth'), set: { shownCloth: true }, then: [
     { s: 'me', f: 'angry', t: '这块布，是从那个娃娃身上剪下来的。云纹软烟罗——今年内务府只进了两匹，全送去了永和宫！' },
     { face: { ningpin: 'shock' } },
     { s: 'huanghou', f: 'think', t: '……刘嬷嬷，去内务府查账。' },
@@ -642,9 +648,90 @@ N.c3_verdict = [
   { if: G => G.flag('askedHou') && (G.flag('shownCloth') || G.flag('shownCuilv') || G.flag('dollSafe') === 'hou' || G.flag('incenseProof')), go: 'c3_half' },
   { s: 'momo', f: 'smirk', t: '说来说去，什么都证明不了。' },
   { s: 'huanghou', f: 'normal', t: '证据不足，那便先押着，慢慢审。' },
+  { if: G => !G.flag('graceUsed'), then: [
+    { s: 'os', f: 'panic', t: '不行，现在被押走就完了——得给自己争取时间！' },
+    { c: [
+      { t: '“娘娘！求您宽限三日。三日之内，嫔妾把真凶的尾巴揪出来！”', go: 'c3_grace' },
+      { t: '（低下头，什么也不说）', then: [] },
+    ] },
+  ] },
   { s: 'os', f: 'panic', t: '我还有话……可我还能说什么？说什么都没人信……' },
   { s: 'n', t: '你张了张嘴，最后什么也没说出来。' },
   { go: 'c3_dark' },
+];
+/* ---- 证据不足时的“宽限三日”：一条温和的退路（每一世一次） ---- */
+const graceHint = G => {
+  const f = G.run.flags, L = [];
+  if (!f.clothId) L.push(f.clothScrap ? '那块布料还没人认出来——浣衣局的阿芸，什么料子都见过。' : '我手上没有能指向永和宫的物证——浣衣局天天替各宫洗衣裳，也许能找到点什么。');
+  if (!f.cuilvWitness) L.push('翠缕失踪了。她是最关键的人证——浣衣局的消息最灵通。');
+  if (C(G, 'trust_hou') < 40 && !(f.clothId && f.cuilvWitness)) L.push('（太后对我还不够信任，这回指望不上她。物证和人证，最好都有。）');
+  return L;
+};
+N.c3_grace = [
+  { set: { graceUsed: true, graceDay: 0 } },
+  { s: 'huanghou', f: 'think', t: '……三日。' },
+  { s: 'huanghou', f: 'normal', t: '本宫就给你三日。三日后若还是这些空话，罪加一等，谁求情都没用。' },
+  { s: 'ningpin', f: 'smile', t: '妹妹可要抓紧呀~姐姐在永和宫，等你的好消息。' },
+  { s: 'guifei', f: 'angry', t: '{宫名}！本宫这条命，可押在你身上了。三天！你给本宫跑快点！' },
+  { s: 'os', f: 'sweat', t: '（一个让我快点死，一个让我快点跑。宫里的姐妹情，真是两极分化。）' },
+  { bg: 'room_night', music: 'night', cast: [['me', 'think', 'L'], ['xiaotao', 'sweat', 'R']] },
+  { s: 'xiaotao', f: 'cry', t: '小主……三天，够吗？' },
+  { s: 'me', f: 'think', t: '够。我们来理一理，到底缺什么。' },
+  G => { graceHint(G).forEach((t, i) => setTimeout(() => P.UI.toast('💡 ' + t, 'mem', 4200), i * 900)); },
+  { if: G => !G.flag('clothId'), then: [{ s: 'os', f: 'think', t: '第一，物证。得有一样东西，能把娃娃和永和宫连起来。' }] },
+  { if: G => !G.flag('cuilvWitness'), then: [{ s: 'os', f: 'think', t: '第二，人证。翠缕——她知道是谁让她把娃娃塞进贵妃床底的。' }] },
+  { s: 'xiaotao', f: 'think', t: '那……还是去浣衣局？阿芸那儿，什么消息都有。' },
+  { s: 'me', f: 'smile', t: '对。浣衣局：后宫的八卦集散中心，皂角味的。' },
+  { go: 'c3_gw' },
+];
+N.c3_gw = [
+  G => { G.run.flags.graceDay = (G.run.flags.graceDay || 0) + 1; },
+  { if: G => G.flag('graceDay') > 3, go: 'c3_back' },
+  { time: '晨' },
+  { bg: 'laundry', music: 'day', cast: [['me', 'normal', 'L'], ['ayun', 'smile', 'R']] },
+  { if: G => G.flag('graceDay') === 1, then: [
+    { s: 'ayun', f: 'shock', t: '小主？您不是在慎刑司……您怎么又回来洗衣服了？' },
+    { s: 'me', f: 'sweat', t: '皇后娘娘给了我三天假。带薪洗衣。' },
+  ], else: [{ s: 'ayun', f: 'normal', t: '今天还有两大盆。三天的期限，一天一天地少喽。' }] },
+  { c: [
+    { t: '撸起袖子搓衣服，边搓边跟阿芸打听', then: [
+      add('ayun', 10),
+      { if: G => !G.flag('clothId'), then: [
+        { if: G => G.flag('clothScrap'), then: [
+          { s: 'n', t: '你装作不经意，把那角布料亮给阿芸看。' },
+          { s: 'ayun', f: 'shock', t: '这是云纹软烟罗！今年内务府只进了两匹，全给了……永和宫。' },
+        ], else: [
+          { s: 'ayun', f: 'think', t: '布料？……说起来，上个月永和宫送来一包边角料，说是做香囊剩下的，让我们洗干净了送回去。' },
+          { s: 'ayun', f: 'sweat', t: '淡青色的，上面有云纹，软得跟烟一样。我们这儿的人都没见过这么好的料子，偷偷留了一小块当抹布……' },
+          { s: 'me', f: 'shock', t: '抹布？！快，给我！' },
+          { s: 'ayun', f: 'normal', t: '给您给您。我拿它擦过两回灶台，您别嫌弃。' },
+          { set: { clothAlt: true, clothScrap: true } },
+        ] },
+        { s: 'os', f: 'think', t: '云纹软烟罗——娃娃身上就是这种料子。永和宫。宁嫔。' },
+        { set: { clothId: true } }, { mem: 'M10' },
+      ], else: [
+        { if: G => !G.flag('cuilvWhere'), then: [
+          { s: 'ayun', f: 'think', t: '你打听翠缕？……她前几天半夜来浣衣局，求我把一件沾了香灰的衣裳洗了。哭得可凶了。' },
+          { s: 'ayun', f: 'normal', t: '我猜她躲在御花园西边那个废了的绛雪轩里。那儿晚上有侍卫巡逻，你可小心。' },
+          { set: { cuilvWhere: true } }, add('intel', 1),
+        ], else: [
+          { s: 'ayun', f: 'smile', t: '今天没什么新鲜事。就是御膳房的鸭子又少了一只——这回不是您吧？' },
+          { s: 'me', f: 'sweat', t: '……不是。我最近只洗衣服，不吃鸭子。' },
+        ] },
+      ] },
+    ] },
+    { t: '今晚就去绛雪轩找翠缕', need: G => G.flag('cuilvWhere') && !G.flag('cuilvWitness'), go: 'c3_escape' },
+    { t: '回慎刑司（不等三天了）', go: 'c3_back' },
+  ] },
+  { go: 'c3_gw' },
+];
+N.c3_back = [
+  { time: '午' },
+  { bg: 'shenxing', music: 'danger', cast: [['me', 'normal', 'LL'], ['ningpin', 'smile', 'L'], ['huanghou', 'normal', 'C'], ['momo', 'angry', 'R', { pose: 'ruler', prop: 'ruler' }], ['guifei', 'angry', 'RR']] },
+  { s: 'huanghou', f: 'normal', t: '时候到了。{宫名}，你找到了什么？' },
+  { s: 'ningpin', f: 'smile', t: '妹妹这几天在浣衣局洗衣裳，手都洗粗了吧？姐姐看着真心疼。' },
+  { s: 'me', f: 'smile', t: '不心疼。洗衣服的时候，洗出了不少好东西。' },
+  { go: 'c3_proof' },
 ];
 N.c3_half = [ // 太后保下了你，但贵妃没洗清
   { s: 'huanghou', f: 'think', t: '……既然太后作保，{宫名}暂且无罪。' },
