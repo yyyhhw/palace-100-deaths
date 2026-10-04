@@ -473,7 +473,7 @@ function somethingVisible() {
 }
 UI.recover = function (why) {
   const r = G.run; if (!r || !r.node) return false;
-  UI.watch.fixes++; G.diag && G.diag('watchdog', why || '');
+  UI.watch.fixes++; const stp = (P.NODES[r.node] || [])[r.ip - 1]; G.diag && G.diag('watchdog', (why || '') + ' dlg=' + $('#dlg').className + ' say=' + !!sayState + ' ch=' + $('#choices').children.length + ' alive=' + G.loopAlive() + ' step=' + (stp ? (typeof stp === 'function' ? 'fn' : Object.keys(stp).join(',')) : '-') + ' fader=' + $('#fader').className);
   const d = $('#dlg');
   if (sayState && G.alive(sayState.my)) { // 台词还在等，只是框没了：把它重新显示出来
     d.className = (sayState.cls || 'show narr').replace(/\bchoosing\b/g, '') + ' done'; if (!/\bshow\b/.test(d.className)) d.className += ' show';
@@ -486,10 +486,13 @@ UI.recover = function (why) {
   if (G.loopAlive()) { G.play(r.node, Math.max(0, r.ip - 1)); return 'replay'; } // 卡在一个看不见的等待上：从当前这一步重来
   G.play(r.node, Math.min(r.ip, steps.length)); return 'resume'; // 剧情循环意外停了：接着往下走（走到头/节点没了时 G.play 会回到当天清晨）
 };
-setInterval(() => {
-  const r = G.run, w = UI.watch;
-  if (!r || !r.node || document.hidden || somethingVisible()) { w.idle = 0; return; }
-  w.idle += 0.5;
-  if (w.idle >= 3) { w.idle = 0; const k = UI.recover('idle'); if (k) console.warn('watchdog recovered:', k, r.node, r.ip); }
+setInterval(() => { // 用真实时间计：连续 3.5 秒“什么都没有”且当前这一步没动过，并且下一次检查时依然如此，才出手（避免卡顿时误判）
+  const r = G.run, w = UI.watch, now = Date.now();
+  if (!r || !r.node || document.hidden || somethingVisible()) { w.since = 0; w.armed = null; return; }
+  if (!w.since) { w.since = now; return; }
+  if (now - w.since < 3500 || now - (G.stepT || 0) < 3500) { w.armed = null; return; }
+  const sig = r.node + ':' + r.ip + ':' + G.stepT;
+  if (w.armed !== sig) { w.armed = sig; return; }
+  w.since = 0; w.armed = null; const k = UI.recover('idle'); if (k) console.warn('watchdog recovered:', k, r.node, r.ip);
 }, 500);
 })(window.PALACE = window.PALACE || {});

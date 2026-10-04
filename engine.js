@@ -304,7 +304,7 @@ async function exec(st, my) {
       if (my !== gen) return null;
       if (v === 'skip') { res = PERFECT[st.game](G, st); res.skipped = true; P.UI.toast('⏭ 已跳过：按完美通过', 'good', 1600); }
     }
-    if (!res) { const pm = G.run.mood || AU.mood; res = await P.GAMES[st.game].play(G, st); if (pm) AU.setMood(pm); if (my !== gen) return null; }
+    if (!res) { const pm = G.run.mood || AU.mood; G.run.gameIp = G.run.ip - 1; try { res = await P.GAMES[st.game].play(G, st); } finally { if (G.run) delete G.run.gameIp; } if (pm) AU.setMood(pm); if (my !== gen) return null; }
     G.run.flags['game_' + st.game] = res; G.run.postGame = { k: gk, n: 0, name: G.gameName(st) };
     if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null;
   }
@@ -370,7 +370,9 @@ G.rebirth = function (fromStart) {
   restoreScene(base.scene); AU.setMood(base.mood || 'day');
   G.play(base.node, base.ip);
 };
-G.resume = function () { if (!G.run || !G.run.node) return false; restoreScene(G.run.scene); P.UI.hud(); AU.setMood(G.run.mood || 'day'); G.play(G.run.node, G.run.ip); return true; };
+G.resume = function () { if (!G.run || !G.run.node) return false; restoreScene(G.run.scene); P.UI.hud(); AU.setMood(G.run.mood || 'day');
+  const gi = G.run.gameIp; delete G.run.gameIp; // 小游戏玩到一半被关掉：回来时重玩这个小游戏，而不是跳过它
+  G.play(G.run.node, gi != null && gi >= 0 ? gi : G.run.ip); return true; };
 G.newGame = function () { G.run = freshRun('ch0'); restoreScene({ bg: 'room', cast: [] }); P.UI.hud(); G.play(P.chapters.ch0.start, 0); };
 /* ---------- 章节衔接 / 章节选择 ---------- */
 G.CH_ORDER = ['ch0', 'ch1', 'ch2', 'ch3', 'ch4'];

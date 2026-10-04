@@ -343,7 +343,7 @@ N.c2_shop = [
   { s: 'n', t: '永和宫偏殿后门，“宫中第一奶茶铺”悄悄开张了。' },
   { game: 'milktea', customers: 4, patience: 15, price: 30 },
   G => { const r = G.flag('game_milktea') || {}; G.run.cnt.silver = (G.run.cnt.silver || 0) + (r.earned || 0); G.run.flags.teaRound = (G.run.flags.teaRound || 0) + 1; if (r.served) G.run.flags.teaMaker = true; P.UI.toast('💰 银两 +' + (r.earned || 0) + '（共 ' + G.run.cnt.silver + ' 两）', 'item', 1800); },
-  { if: G => G.flag('teaRound') === 1 && G.flag('game_milktea').served >= 2, then: [{ s: 'xiaoan', f: 'smile', t: '小主！外头又排起队了！' }, add('kill', 10)] },
+  { if: G => G.flag('teaRound') === 1 && (G.flag('game_milktea') || {}).served >= 2, then: [{ s: 'xiaoan', f: 'smile', t: '小主！外头又排起队了！' }, add('kill', 10)] },
   { if: G => G.cnt('silver') > 300, go: 'c2_raid' },
   { if: G => G.flag('teaRound') >= 1, then: [{ s: 'xiaoan', f: 'sweat', t: '小主……听说内务府最近在查“私营商贾”，攒到三百两可就太招摇了。咱们是不是……收着点？' }] },
   { c: [

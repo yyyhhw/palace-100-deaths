@@ -214,7 +214,7 @@ N.c1_d3 = [
   { game: 'quiz' },
   { if: G => !(G.flag('game_quiz') && G.flag('game_quiz').score >= 60), go: 'c1_quizfail' },
   { fx: { 规矩: 10, 名声: 5 } },
-  { if: G => G.flag('game_quiz').score === 100, then: [{ fx: { 名声: 5 } }, { s: 'guimama', f: 'smile', t: '满分？……哼，算你用功。' }] },
+  { if: G => (G.flag('game_quiz') || {}).score === 100, then: [{ fx: { 名声: 5 } }, { s: 'guimama', f: 'smile', t: '满分？……哼，算你用功。' }] },
   { time: '夜' },
   { bg: 'room_night', music: 'night', cast: [['me', 'panic', 'L'], ['xiaotao', 'sleepy', 'R']] },
   { s: 'n', t: '储秀宫的晚饭：一碗清粥，两根咸菜。' },
