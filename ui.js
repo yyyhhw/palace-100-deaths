@@ -456,6 +456,7 @@ UI.settings = function () {
 UI.title = function () {
   G.stop(); document.body.classList.add('nohud');
   ['#deathOv', '#stationOv', '#galleryOv', '#endOv', '#nameOv', '#finOv'].forEach(hide); if (finLoop) { finLoop(); finLoop = null; }
+  { const go = $('#gameOv'); if (go && go.innerHTML) { go.className = ''; go.innerHTML = ''; Object.values(P.GAMES || {}).forEach(g => { if (g && 'state' in g) g.state = null; }); } }
   G.stage.bg = 'title'; G.stage.prevBg = null; G.stage.cat = { pos: 0.86, x: 0.86, mood: 'happy' };
   G.stage.cast = []; G.stage.titleMode = true;
   const land = G.layout().land;
