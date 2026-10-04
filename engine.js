@@ -29,13 +29,39 @@ function migrate(d) {
   d.v = SAVE_VERSION; return d;
 }
 G.load = function () {
+  loadRead();
   try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return false; const d = migrate(JSON.parse(raw)); if (!d) return false; G.meta = d.meta; G.run = d.run || null; return true; }
   catch (e) { console.warn('load failed', e); return false; }
 };
 G.save = function () {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, meta: G.meta, run: G.run, at: Date.now() })); } catch (e) { /* 无痕模式可能写不进去 */ }
 };
-G.wipe = function () { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} G.meta = freshMeta(); G.run = null; };
+/* ---------- 已读剧情（跨轮回、跨刷新永久保存；独立 key，每个剧情节点一组短哈希） ---------- */
+const READ_KEY = 'palace100_read', READ_VERSION = 1;
+const hash = str => { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36); };
+G.hash = hash;
+const R = G.readStore = { n: {}, c: {}, dirty: false, t: null };
+function loadRead() {
+  R.n = {}; R.c = {};
+  try { const raw = localStorage.getItem(READ_KEY); if (!raw) return; const d = JSON.parse(raw); if (!d || d.v !== READ_VERSION) return;
+    Object.keys(d.n || {}).forEach(k => { R.n[k] = new Set(String(d.n[k]).split(',').filter(Boolean)); });
+    Object.keys(d.c || {}).forEach(k => { R.c[k] = new Set(String(d.c[k]).split(',').filter(Boolean)); });
+  } catch (e) { R.n = {}; R.c = {}; }
+}
+function flushRead() { R.t = null; if (!R.dirty) return; R.dirty = false; const o = { v: READ_VERSION, n: {}, c: {} };
+  Object.keys(R.n).forEach(k => { o.n[k] = [...R.n[k]].join(','); }); Object.keys(R.c).forEach(k => { o.c[k] = [...R.c[k]].join(','); });
+  try { localStorage.setItem(READ_KEY, JSON.stringify(o)); } catch (e) {} }
+const touchRead = () => { R.dirty = true; if (!R.t) R.t = setTimeout(flushRead, 400); };
+G.flushRead = flushRead;
+G.lineKey = st => (st && st.s !== undefined) ? hash(st.s + '|' + (st.t || '')) : null;
+G.isRead = (node, key) => !!(key && R.n[node] && R.n[node].has(key));
+G.markRead = (node, key) => { if (!key || !node) return; const s = R.n[node] || (R.n[node] = new Set()); if (!s.has(key)) { s.add(key); touchRead(); } };
+G.choiceKey = o => hash('c|' + (o.t || ''));
+G.wasPicked = (node, o) => !!(R.c[node] && R.c[node].has(G.choiceKey(o)));
+G.markPicked = (node, o) => { const s = R.c[node] || (R.c[node] = new Set()); const k = G.choiceKey(o); if (!s.has(k)) { s.add(k); touchRead(); } };
+G.readCount = () => Object.values(R.n).reduce((a, s) => a + s.size, 0);
+window.addEventListener('pagehide', flushRead); document.addEventListener('visibilitychange', () => { if (document.hidden) flushRead(); });
+G.wipe = function () { try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(READ_KEY); } catch (e) {} R.n = {}; R.c = {}; R.dirty = false; G.meta = freshMeta(); G.run = null; };
 const clone = o => JSON.parse(JSON.stringify(o));
 
 /* ---------- 名字 ---------- */
@@ -154,6 +180,7 @@ let gen = 0;
 G.busy = false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 G.sleep = sleep;
+const ssleep = ms => sleep(P.UI && P.UI.skip ? Math.min(ms, 40) : ms); // 快进时缩短演出等待
 G.play = async function (node, ip) {
   const my = ++gen; stage.titleMode = false; P.UI.hud(); G.run.node = node; G.run.ip = ip || 0; G.save();
   try {
@@ -185,10 +212,10 @@ async function exec(st, my) {
     await P.UI.transition(st.trans || 'fade', () => { stage.prevBg = null; stage.bg = st.bg; if (st.cast) setCast(st.cast); else if (!st.keepCast) stage.cast = []; stage.cat = st.cat || null; if (stage.cat) stage.cat.x = POS[stage.cat.pos] || 0.5; restoreXs(); }); if (st.music) AU.setMood(st.music); return null; }
   if (st.music) { AU.setMood(st.music); G.run.mood = st.music; if (Object.keys(st).length === 1) return null; }
   if (st.cast) { setCast(st.cast); return null; }
-  if (st.enter) { const list = sceneSnapshot().cast; list.push([st.enter, st.face, st.pos || 'R', st]); setCast(list); if (st.sfx) AU.sfx(st.sfx); await sleep(250); return null; }
-  if (st.exit) { stage.cast.forEach(c => { if (c.id === st.exit) c.leaving = true; }); await sleep(200); return null; }
+  if (st.enter) { const list = sceneSnapshot().cast; list.push([st.enter, st.face, st.pos || 'R', st]); setCast(list); if (st.sfx) AU.sfx(st.sfx); await ssleep(250); return null; }
+  if (st.exit) { stage.cast.forEach(c => { if (c.id === st.exit) c.leaving = true; }); await ssleep(200); return null; }
   if (st.face) { Object.keys(st.face).forEach(id => { const c = stage.cast.find(k => k.id === id); if (c) c.face = st.face[id]; }); return null; }
-  if (st.move) { Object.keys(st.move).forEach(id => { const c = stage.cast.find(k => k.id === id); if (c) c.pos = st.move[id]; }); await sleep(300); return null; }
+  if (st.move) { Object.keys(st.move).forEach(id => { const c = stage.cast.find(k => k.id === id); if (c) c.pos = st.move[id]; }); await ssleep(300); return null; }
   if (st.look) { Object.keys(st.look).forEach(id => { const c = stage.cast.find(k => k.id === id); if (c) Object.assign(c, st.look[id]); }); return null; }
   if (st.cat !== undefined) { if (!st.cat) stage.cat = null; else { stage.cat = Object.assign(stage.cat || { x: (POS[st.cat.from] || 1.2) }, st.cat); } return null; }
   if (st.s !== undefined) { // 台词
@@ -197,7 +224,7 @@ async function exec(st, my) {
     if (st.jump) { const c = stage.cast.find(k => k.id === (st.s === 'os' ? 'me' : st.s)); if (c) c.jump = 1; }
     if (st.sfx) AU.sfx(st.sfx);
     if (st.shake) stage.shake = st.shake;
-    await P.UI.say(st.s, G.render(st.t), st, my); return null;
+    await P.UI.say(st.s, G.render(st.t), st, my, G.run.node, G.lineKey(st)); return null;
   }
   if (st.c) { const r = await P.UI.choose(st.c, st, my); if (my !== gen || !r) return null; return applyChoice(r, my); }
   if (st.fx) { G.fx(st.fx, st.silent); return null; }
@@ -210,7 +237,7 @@ async function exec(st, my) {
   if (st.shake) { stage.shake = st.shake; return null; }
   if (st.flash) { stage.flash = 1; stage.flashCol = st.flash === true ? '#fff' : st.flash; return null; }
   if (st.emote) { stage.emotes.push({ id: st.who || 'me', e: st.emote, k: 0 }); return null; }
-  if (st.wait) { await sleep(st.wait); return null; }
+  if (st.wait) { await ssleep(st.wait); return null; }
   if (st.toast) { P.UI.toast(G.render(st.toast), st.kind || 'info', st.ms); return null; }
   if (st.confetti) { G.confetti(); return null; }
   if (st.day !== undefined) {
@@ -220,10 +247,10 @@ async function exec(st, my) {
   }
   if (st.time) { G.run.time = st.time; P.UI.hud(); P.UI.toast('🕯️ ' + st.time, 'info', 1200); return null; }
   if (st.checkpoint) { G.checkpoint(st.checkpoint); return null; }
-  if (st.chapterEnd) { P.UI.hideDialog(); await P.UI.chapterEnd(st.chapterEnd, st); return null; }
+  if (st.chapterEnd) { P.UI.stopSkip && P.UI.stopSkip(); P.UI.hideDialog(); await P.UI.chapterEnd(st.chapterEnd, st); return null; }
   if (st.title) { await P.UI.chapterCard(st.title, st.sub); return null; }
-  if (st.input) { await P.UI.nameInput(st.input, st); return null; }
-  if (st.game) { const pm = G.run.mood || AU.mood; const res = await P.GAMES[st.game].play(G, st); if (pm) AU.setMood(pm); if (my !== gen) return null; G.run.flags['game_' + st.game] = res; if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null; }
+  if (st.input) { P.UI.stopSkip && P.UI.stopSkip(); await P.UI.nameInput(st.input, st); return null; }
+  if (st.game) { P.UI.stopSkip && P.UI.stopSkip(); const pm = G.run.mood || AU.mood; const res = await P.GAMES[st.game].play(G, st); if (pm) AU.setMood(pm); if (my !== gen) return null; G.run.flags['game_' + st.game] = res; if (res && res.death) return G.death(res.death); return st.after ? { go: st.after } : null; }
   if (st.death) return G.death(st.death, st);
   if (st.go) return { go: st.go };
   if (st.hud !== undefined) { document.body.classList.toggle('nohud', !st.hud); return null; }
@@ -231,7 +258,7 @@ async function exec(st, my) {
 }
 function restoreXs() { stage.cast.forEach(c => { c.x = null; }); }
 async function applyChoice(o, my) {
-  AU.sfx('select');
+  AU.sfx('select'); if (G.run && G.run.node) G.markPicked(G.run.node, o);
   if (o.inc) G.run.cnt[o.inc] = (G.run.cnt[o.inc] || 0) + 1;
   if (o.set) Object.assign(G.run.flags, o.set);
   if (o.fx) G.fx(o.fx);
@@ -250,7 +277,7 @@ G.checkpoint = function (label) {
 G.death = async function (id, st) {
   const my = ++gen; const d = P.DEATH_MAP[id];
   if (!d) { console.error('unknown death', id); return { dead: true }; }
-  P.UI.hideChoices(); P.UI.hideDialog();
+  P.UI.stopSkip && P.UI.stopSkip(); P.UI.hideChoices(); P.UI.hideDialog();
   const rec = G.meta.deaths[id], isNew = !rec;
   G.meta.deaths[id] = { n: (rec ? rec.n : 0) + 1, first: rec ? rec.first : G.meta.lives, at: Date.now() };
   G.meta.totalDeaths++; G.meta.lives++;

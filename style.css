@@ -23,13 +23,13 @@ body.nohud #hud{display:none}
 #dayPill b{color:var(--red)} #dayPill i{font-style:normal;margin-left:6px;font-size:12px}
 #lifePill{background:#efe3ff;color:#5a3a8a}
 .hbtn{width:40px;height:40px;border-radius:50%;border:2.5px solid var(--ink);background:rgba(255,248,234,.92);font-size:17px;box-shadow:0 2px 0 rgba(0,0,0,.2);padding:0}
-#btnSkip{margin-left:auto}
+#btnAuto{margin-left:auto}#btnAuto.on{background:var(--gold)}
 #btnSkip.on{background:var(--gold)}
 #stats{display:flex;gap:4px;flex-wrap:nowrap;order:5;width:100%;cursor:pointer}
 .st{flex:1;display:flex;align-items:center;justify-content:center;gap:2px;background:rgba(255,248,234,.88);border:2px solid rgba(58,32,40,.6);border-radius:10px;padding:2px 2px;font-size:13px;font-weight:700;min-width:0}
 .st em{font-style:normal;font-size:12px}
 body.land #stats{width:auto;order:2;flex:0 1 auto} body.land .st{flex:0 0 auto;padding:2px 6px}
-body.land #btnSkip{margin-left:auto;order:3} body.land #btnMenu{order:4} body.land #lifePill{order:1}
+body.land #btnAuto{margin-left:auto;order:3} body.land #btnSkip{order:3} body.land #btnMenu{order:4} body.land #lifePill{order:1}
 
 /* ---------- 对话气泡 ---------- */
 #dlg{position:absolute;z-index:9;display:none;left:calc(10px + var(--sal));right:calc(10px + var(--sar));bottom:calc(12px + var(--sab));min-height:118px;padding:22px 20px 24px;background:#fff;border:3.5px solid var(--ink);border-radius:26px;box-shadow:5px 6px 0 rgba(58,32,40,.28);font-size:17px;line-height:1.65;cursor:pointer}
@@ -311,3 +311,10 @@ body.land .logo .l2{font-size:min(5.6vw,58px);white-space:nowrap}
 .ccard i{font-style:normal;font-size:18px}.ccard b{font-family:var(--serif);font-size:30px;color:#2a3a6a;line-height:1.1}.ccard small{opacity:.55;font-size:12px}
 .cres{font-weight:900;font-size:16px;padding:6px 10px;border-radius:10px;background:#fff4dc;border:2px solid #c9a87a}.cres.w{color:#2a7a3a}.cres.l{color:#8a1f2b}
 @media (max-height:500px){.chand{min-height:64px}.ccard{height:62px;width:56px}.ccard b{font-size:20px}.ccard i{font-size:13px}.dbtn,.xbtn{min-height:44px}.cmsg,.smsg{font-size:13px;padding:3px 8px}}
+
+/* ---------- 快进 / 自动播放 ---------- */
+#skipBadge{position:absolute;left:50%;top:calc(58px + var(--sat));transform:translateX(-50%);z-index:26;display:none;pointer-events:none;background:rgba(40,24,30,.82);color:#ffe08a;font-weight:900;font-size:14px;padding:4px 14px;border-radius:999px;border:2px solid #e8b84a;letter-spacing:1px}
+#skipBadge.show{display:block;animation:bob 0.6s infinite}
+body.land #skipBadge{top:calc(10px + var(--sat))}
+#dlg.readline .txt{color:#5a4a6a}
+.choice .gb.picked{background:#3f9a6a;color:#fff}

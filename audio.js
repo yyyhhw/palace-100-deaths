@@ -317,6 +317,7 @@ AU.state = function () { return { ctx: ctx ? ctx.state : 'none', mood: AU.mood, 
 const STING = { death: [0.3, 1.6], gong: [0.45, 1.6], fanfare: [0.4, 2.2], scream: [0.4, 1], stamp: [0.6, 0.6], burp: [0.5, 1], splash: [0.6, 0.9] };
 AU.sfx = function (name) {
   if (!ctx || ctx.state !== 'running' || AU.cfg.sfx <= 0) return;
+  if (P.UI && P.UI.skip) return; // 快进时不放音效/插曲（音乐照常）
   const t = ctx.currentTime + 0.01;
   if (STING[name]) AU.duck(STING[name][0], STING[name][1]);
   switch (name) {
@@ -352,6 +353,7 @@ let zhVoice = null;
 function pickVoice() { try { const vs = speechSynthesis.getVoices() || []; zhVoice = vs.find(v => /zh[-_]CN/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang)) || null; } catch (e) {} }
 if ('speechSynthesis' in window) { pickVoice(); try { speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
 AU.speak = function (text) {
+  if (P.UI && P.UI.skip) return;
   if (!AU.cfg.speech || !text) return false;
   try {
     if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return false;

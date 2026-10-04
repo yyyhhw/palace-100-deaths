@@ -20,7 +20,17 @@ UI.init = function () {
   $('#dlg').addEventListener('click', () => UI.advance());
   document.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !document.activeElement.matches('input')) { if (!$('#choices').children.length) UI.advance(); } });
   $('#btnMenu').onclick = e => { e.stopPropagation(); AU.sfx('tap'); UI.menu(); };
-  $('#btnSkip').onclick = e => { e.stopPropagation(); UI.skip = !UI.skip; $('#btnSkip').classList.toggle('on', UI.skip); AU.sfx('tap'); if (UI.skip) UI.advance(); };
+  $('#btnSkip').onclick = e => { e.stopPropagation(); if (UI.skip) UI.stopSkip(); else { AU.sfx('tap'); UI.startSkip(false); } };
+  $('#btnAuto').onclick = e => { e.stopPropagation(); AU.sfx('tap'); UI.setAuto(!UI.auto); };
+  // 长按（触屏/鼠标）临时快进；桌面 Ctrl 键按住快进
+  let holdT = null, held = false;
+  const holdStart = e => { if (e.button > 0) return; clearTimeout(holdT); held = false; holdT = setTimeout(() => { held = true; UI.startSkip(true); }, 450); };
+  const holdEnd = () => { clearTimeout(holdT); if (held && UI.skipHold) UI.stopSkip(true); };
+  ['#tapLayer', '#dlg'].forEach(id => { const n = $(id); n.addEventListener('pointerdown', holdStart); n.addEventListener('pointerup', holdEnd); n.addEventListener('pointercancel', holdEnd); n.addEventListener('pointerleave', holdEnd);
+    n.addEventListener('click', e => { if (held) { e.stopImmediatePropagation(); held = false; } }, true); n.addEventListener('contextmenu', e => e.preventDefault()); });
+  document.addEventListener('keydown', e => { if (e.key === 'Control' && !e.repeat && !UI.skip) UI.startSkip(true); });
+  document.addEventListener('keyup', e => { if (e.key === 'Control' && UI.skipHold) UI.stopSkip(true); });
+  window.addEventListener('blur', () => { if (UI.skipHold) UI.stopSkip(true); });
   $('#stats').onclick = e => { e.stopPropagation(); UI.statsHelp(); };
 };
 let primed = false;
@@ -53,8 +63,8 @@ UI.modal = function (title, html, buttons) {
 
 /* ---------- 过场 ---------- */
 UI.transition = async function (kind, mid) {
-  const f = $('#fader'); f.className = 'show ' + (kind || 'fade');
-  await sleep(kind === 'cut' ? 0 : 260); mid && mid(); await sleep(60); f.className = kind || 'fade'; await sleep(kind === 'cut' ? 0 : 260);
+  const f = $('#fader'); f.className = 'show ' + (kind || 'fade'); const d = UI.skip ? 40 : 260;
+  await sleep(kind === 'cut' ? 0 : d); mid && mid(); await sleep(UI.skip ? 10 : 60); f.className = kind || 'fade'; await sleep(kind === 'cut' ? 0 : d);
 };
 const NUM = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 UI.dayCard = function (day, time, date) {
@@ -63,7 +73,7 @@ UI.dayCard = function (day, time, date) {
     d.querySelector('.sub').textContent = (date || ('承平三年 · 三月初' + (NUM[day] || day))) + ' · ' + time;
     show('#dayCard'); AU.sfx('muyu');
     let done = false; const fin = () => { if (done) return; done = true; hide('#dayCard'); setTimeout(res, 250); };
-    d.onclick = fin; setTimeout(fin, UI.skip ? 500 : 1500);
+    d.onclick = fin; setTimeout(fin, UI.skip ? 300 : 1500);
   });
 };
 UI.chapterCard = function (title, sub) {
@@ -71,13 +81,24 @@ UI.chapterCard = function (title, sub) {
     const d = $('#chapterCard'); d.querySelector('.ct').textContent = title; d.querySelector('.cs').textContent = sub || '';
     show('#chapterCard'); AU.sfx('gong');
     let done = false; const fin = () => { if (done) return; done = true; hide('#chapterCard'); setTimeout(res, 300); };
-    d.onclick = fin; setTimeout(fin, 2600);
+    d.onclick = fin; setTimeout(fin, UI.skip ? 600 : 2600);
   });
 };
 
-/* ---------- 对话 ---------- */
+/* ---------- 对话 · 快进 / 自动播放 ---------- */
 let sayState = null;
-UI.skip = false;
+UI.skip = false; UI.skipHold = false; UI.auto = false;
+const skipAll = () => G.meta.settings.skipAll === true;
+const skipBadge = () => { const b = $('#skipBadge'); if (!b) return; b.textContent = UI.skip ? (skipAll() ? '⏩ 快进中（全部）' : '⏩ 快进中') : UI.auto ? '▶ 自动播放' : ''; b.classList.toggle('show', UI.skip || UI.auto); document.body.classList.toggle('skipping', UI.skip); };
+UI.startSkip = function (hold) {
+  if (UI.skip) return; UI.skip = true; UI.skipHold = !!hold; $('#btnSkip').classList.add('on'); skipBadge();
+  if (sayState && sayState.done) setTimeout(() => UI.skip && sayState && sayState.done && UI.advance(), 30);
+  else if (sayState && (skipAll() || G.isRead(sayState.node, sayState.key))) sayState.finish();
+  else if (sayState) { UI.stopSkip(); UI.toast('已到未读剧情', 'info', 1100); }
+};
+UI.stopSkip = function () { if (!UI.skip) return; UI.skip = false; UI.skipHold = false; $('#btnSkip').classList.remove('on'); skipBadge(); };
+UI.setAuto = function (on) { UI.auto = !!on; $('#btnAuto').classList.toggle('on', UI.auto); skipBadge(); if (UI.auto && sayState && sayState.done) sayState.autoT = setTimeout(() => UI.auto && sayState && sayState.done && UI.advance(), 900); };
+UI.isSkipping = () => UI.skip;
 function speakerName(who, st) {
   if (st && st.name) return G.render(st.name);
   if (who === 'n') return '';
@@ -85,7 +106,7 @@ function speakerName(who, st) {
   if (who === 'me' || who === 'modern') return G.run && G.run.flags.modernMode ? (G.meta.names.modern || '我') : (G.palaceName() || G.meta.names.modern || '我');
   return (A.CH[who] && A.CH[who].name) || who;
 }
-UI.say = function (who, text, st, my) {
+UI.say = function (who, text, st, my, node, key) {
   return new Promise(res => {
     const d = $('#dlg'), tx = d.querySelector('.txt'), tag = d.querySelector('.nameTag');
     d.className = 'show ' + (who === 'n' ? 'narr' : who === 'os' ? 'think' : 'speech') + (st.big ? ' big' : '');
@@ -95,8 +116,14 @@ UI.say = function (who, text, st, my) {
     const speed = [60, 38, 22, 0][G.meta.settings.speed != null ? G.meta.settings.speed : 2];
     const chars = Array.from(text); let i = 0; tx.innerHTML = '';
     d.classList.remove('done');
-    sayState = { done: false, finish: null, res, my };
-    const finishType = () => { tx.innerHTML = esc(text).replace(/\n/g, '<br>'); i = chars.length; G.stage.talking = false; d.classList.add('done'); sayState.done = true; if (UI.skip) setTimeout(() => sayState && sayState.res === res && UI.advance(), 90); };
+    const wasRead = G.isRead(node, key);
+    if (UI.skip && !wasRead && !skipAll()) { UI.stopSkip(); UI.toast('已到未读剧情', 'info', 1100); }
+    d.classList.toggle('readline', wasRead);
+    sayState = { done: false, finish: null, res, my, node, key };
+    const me = sayState;
+    const finishType = () => { tx.innerHTML = esc(text).replace(/\n/g, '<br>'); i = chars.length; G.stage.talking = false; d.classList.add('done'); me.done = true; G.markRead(node, key);
+      if (UI.skip) setTimeout(() => sayState === me && UI.skip && UI.advance(), 30);
+      else if (UI.auto) me.autoT = setTimeout(() => sayState === me && UI.auto && !UI.skip && UI.advance(), 1100 + chars.length * 55); };
     sayState.finish = finishType;
     if (!speed || UI.skip) { finishType(); return; }
     const tick = () => { if (!sayState || sayState.res !== res) return; if (i >= chars.length) { finishType(); return; } i += 1; tx.innerHTML = esc(chars.slice(0, i).join('')).replace(/\n/g, '<br>'); if (i % 3 === 0) AU.sfx('tick'); setTimeout(tick, speed); };
@@ -106,7 +133,7 @@ UI.say = function (who, text, st, my) {
 UI.advance = function () {
   if (!sayState) return;
   if (!sayState.done) { sayState.finish(); return; }
-  const r = sayState.res; sayState = null; G.stage.talking = false; AU.sfx('tap'); r();
+  const r = sayState.res; clearTimeout(sayState.autoT); G.markRead(sayState.node, sayState.key); sayState = null; G.stage.talking = false; if (!UI.skip) AU.sfx('tap'); r();
 };
 UI.hideDialog = function () { $('#dlg').className = ''; sayState = null; G.stage.speaker = null; G.stage.talking = false; };
 UI.positionTail = function (who) {
@@ -122,7 +149,7 @@ UI.reposition = function () { if (G.stage.speaker) UI.positionTail(G.stage.speak
 /* ---------- 选项 ---------- */
 UI.choose = function (opts, st, my) {
   return new Promise(res => {
-    UI.skip = false; $('#btnSkip').classList.remove('on');
+    UI.stopSkip(); const curNode = G.run && G.run.node;
     const box = $('#choices'); box.innerHTML = '';
     $('#dlg').classList.add('choosing');
     if (st.q) { box.appendChild(el('div', 'cq', esc(G.render(st.q)))); }
@@ -132,6 +159,7 @@ UI.choose = function (opts, st, my) {
       let html = (o.mem || o.know ? '<span class="crys">🔮</span>' : '') + esc(G.render(o.t));
       const did = o.death || (typeof o.danger === 'string' ? o.danger : null);
       if (did && G.died(did)) html += '<span class="gb">👻 已收录</span>';
+      else if (curNode && G.wasPicked(curNode, o)) html += '<span class="gb picked">✓ 已选</span>';
       if (o.hint) html += `<small>${esc(G.render(o.hint))}</small>`;
       b.innerHTML = html; b.dataset.idx = idx;
       b.onclick = e => { e.stopPropagation(); if (box.dataset.lock) return; box.dataset.lock = '1'; b.classList.add('picked'); AU.sfx('stamp'); setTimeout(() => { UI.hideChoices(); res(o); }, 260); };
@@ -314,13 +342,15 @@ UI.settings = function () {
   <label>🔔 音效 <input type="range" min="0" max="1" step="0.05" id="sSfx" value="${s.sfx}"></label>
   <label>🗣️ 死法卡朗读吐槽 <input type="checkbox" id="sSp" ${s.speech ? 'checked' : ''}></label>
   <label>🫨 危险选项轻微抖动（简单模式·第六感）<input type="checkbox" id="sSix" ${s.sixth !== false ? 'checked' : ''}></label>
+  <label>⏩ 快进范围 <select id="sSkip"><option value="0" ${s.skipAll !== true ? 'selected' : ''}>仅快进已读</option><option value="1" ${s.skipAll === true ? 'selected' : ''}>全部快进</option></select></label>
+  <p><small>⏩ 快进会在第一句未读剧情、选项、小游戏、死法卡处自动停下。长按画面（或按住 Ctrl）临时快进，松开即停。▶ 自动播放。</small></p>
   <label>📜 文字速度 <select id="sSpd">${['慢', '中', '快', '瞬间'].map((t, i) => `<option value="${i}" ${+s.speed === i ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
   <p><small>难度：简单（死亡后立即重生、无惩罚，图鉴与记忆永久保留）</small></p>
   <button class="btn warn" id="sWipe">🗑️ 清除全部存档</button></div>`;
   UI.modal('⚙️ 设置', html, [{ t: '完成', cls: 'pri' }]);
-  const upd = () => { s.musicOn = $('#sMusOn').checked; s.music = +$('#sMus').value; s.sfx = +$('#sSfx').value; s.speech = $('#sSp').checked; s.sixth = $('#sSix').checked; s.speed = +$('#sSpd').value; Object.assign(AU.cfg, s); AU.applyVol(); if (!s.speech) AU.stopSpeak(); G.save(); };
+  const upd = () => { s.musicOn = $('#sMusOn').checked; s.music = +$('#sMus').value; s.sfx = +$('#sSfx').value; s.speech = $('#sSp').checked; s.sixth = $('#sSix').checked; s.speed = +$('#sSpd').value; s.skipAll = $('#sSkip').value === '1'; skipBadge(); Object.assign(AU.cfg, s); AU.applyVol(); if (!s.speech) AU.stopSpeak(); G.save(); };
   ['#sMus', '#sSfx', '#sSp', '#sSix', '#sSpd'].forEach(id => $(id).addEventListener('input', upd));
-  ['#sMusOn', '#sSp', '#sSix', '#sSpd'].forEach(id => $(id).addEventListener('change', upd));
+  ['#sMusOn', '#sSp', '#sSix', '#sSpd', '#sSkip'].forEach(id => $(id).addEventListener('change', upd));
   let armed = false; $('#sWipe').onclick = () => { if (!armed) { armed = true; $('#sWipe').textContent = '⚠️ 再点一次确认清除（不可恢复）'; return; } G.wipe(); hide('#modal'); G.stop(); UI.title(); UI.toast('存档已清除', 'info'); };
 };
 
