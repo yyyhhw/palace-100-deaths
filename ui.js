@@ -281,12 +281,19 @@ const MP_LORE = [
   '那丫头当年也不肯喝汤，嘴里还老哼什么“两只老虎，跑得快”……你们那边的人，都这么怪吗？',
   '你身上有那面镜子的味道。上一个有这味道的人，现在住在慈宁宫。',
 ];
+const MP_LORE4 = G => [
+  '冷宫那位种白菜的老太妃？她送过来的客人，我这儿能凑两桌麻将。全是永和宫的。',
+  '观星台那老道，三十年前爬上去看星星，摔下来过一回。我劝他喝汤，他说：“贫道夜观天象，今日不宜喝汤。”',
+  G.flag('houAlly') ? '慈宁宫那丫头认出你了？……哼。她欠我三盆花，你替我问问，啥时候还。' : '你身上那面镜子的味儿越来越重了。小心点，镜子里的人，不一定跟你一个想法。',
+  '暗杀周？我们这儿管这叫“冲业绩周”。这礼拜奈何桥排队的号，都排到永和宫门口了。',
+];
 UI.station = function (d) {
   const ov = $('#stationOv'); AU.setMood('bridge'); G.run.mood = 'bridge';
   const td = G.meta.totalDeaths;
   const greet = G.render(MP_GREET[Math.min(MP_GREET.length - 1, td <= 1 ? 0 : 1 + ((td * 7) % (MP_GREET.length - 1)))]);
   let lore = '';
-  if (td >= 3 && td % 2 === 1) lore = MP_LORE[((td - 3) / 2 | 0) % MP_LORE.length];
+  const LP = G.run && G.run.ch === 'ch4' ? MP_LORE4(G) : MP_LORE;
+  if (td >= 3 && td % 2 === 1) lore = LP[((td - 3) / 2 | 0) % LP.length];
   const lines = [greet, G.render(d.roast || ''), '💡 孟婆小提示：' + G.render(d.hint || '多死几次就知道了。')];
   if (lore) lines.push(lore);
   ov.querySelector('.mpsay').innerHTML = lines.map(l => `<p>${esc(l)}</p>`).join('');
